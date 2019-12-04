@@ -33,6 +33,8 @@ func (e DuplicateInodeError) Error() string {
 
 // UsesOwnLinkError is for when files, directories, or links use symlinks defined in the config
 // in their own path. This is disallowed in v3+ configs.  type UsesOwnLinkError struct { LinkPath string
+type UsesOwnLinkError struct {
+	LinkPath string
 	Name     string
 }
 
@@ -47,6 +49,7 @@ func Check(cfg old.Config, fsMap map[string]string) error {
 	// TODO: validate cfg
 	rpt := oldValidate.ValidateWithoutSource(reflect.ValueOf(cfg))
 	if rpt.IsFatal() || rpt.IsDeprecated() {
+		// disallow any deprecated fields
 		return fmt.Errorf("Invalid input config:\n%s", rpt.String())
 	}
 
@@ -127,5 +130,51 @@ func Translate(cfg old.Config, fsMap map[string]string) (types.Config, error) {
 	if err := Check(cfg, fsMap); err != nil {
 		return types.Config{}, err
 	}
-	return types.Config{}, nil
+	res := types.Config{
+		Ignition: types.Ignition{
+			Version: "3.0.0",
+			Config: types.IgnitionConfig{
+				Replace: translateCfgRef(cfg.Ignition.Config.Replace),
+				Merge: translateCfgRefs(cfg.Ignition.Config.Append),
+			},
+			Security: types.Security{
+				TLS: types.TLS{
+					CertificateAuthorities: translateCAs(cfg.Ignition.Security.TLS.CertificateAuthorities),
+				},
+			},
+			Timeouts: types.Timeouts{
+				HTTPResponseHeaders: cfg.Ignition.Timeouts.HTTPResponseHeaders,
+				HTTPTotal: cfg.Ignition.Timeouts.HTTPTotal,
+			},
+		},
+	}
+	return res, nil
+}
+
+func translateCfgRef(ref *old.ConfigReference) (ret types.ConfigReference) {
+	if ref == nil {
+		return
+	}
+	ret.Source = &ref.Source
+	ret.Verification.Hash = ref.Verification.Hash
+	return
+}
+
+func translateCfgRefs(refs []old.ConfigReference) (ret []types.ConfigReference) {
+	for _, ref := range refs {
+		ret = append(ret, translateCfgRef(&ref))
+	}
+	return
+}
+
+func translateCAs(refs []old.CaReference) (ret []types.CaReference) {
+	for _, ref := range refs {
+		ret = append(ret, types.CaReference{
+			Source: ref.Source,
+			Verification: types.Verification{
+				Hash: ref.Verification.Hash,
+			},
+		})
+	}
+	return
 }
