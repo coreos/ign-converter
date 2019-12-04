@@ -3,29 +3,36 @@ package ign2to3
 import (
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	old "github.com/coreos/ignition/config/v2_4_experimental/types"
+	oldValidate "github.com/coreos/ignition/config/validate"
 	"github.com/coreos/ignition/v2/config/v3_0/types"
 )
 
+// Error definitions
+
+// Error type for when a filesystem is referenced in a config but there's no mapping to where
+// it should be mounted (i.e. `path` in v3+ configs)
 type NoFilesystemError string
 
 func (e NoFilesystemError) Error() string {
 	return fmt.Sprintf("Config defined filesystem %q but no mapping was defined", string(e))
 }
 
+// DuplicateInodeError is for when files, directories, or links both specify the same path
 type DuplicateInodeError struct {
-	Old string
-	New string
+	Old string // first occurance of the path
+	New string // second occurance of the path
 }
 
 func (e DuplicateInodeError) Error() string {
 	return fmt.Sprintf("Config has conflicting inodes: %q and %q", e.Old, e.New)
 }
 
-type UsesOwnLinkError struct {
-	LinkPath string
+// UsesOwnLinkError is for when files, directories, or links use symlinks defined in the config
+// in their own path. This is disallowed in v3+ configs.  type UsesOwnLinkError struct { LinkPath string
 	Name     string
 }
 
@@ -38,6 +45,10 @@ func (e UsesOwnLinkError) Error() string {
 // be mounted in v3.
 func Check(cfg old.Config, fsMap map[string]string) error {
 	// TODO: validate cfg
+	rpt := oldValidate.ValidateWithoutSource(reflect.ValueOf(cfg))
+	if rpt.IsFatal() || rpt.IsDeprecated() {
+		return fmt.Errorf("Invalid input config:\n%s", rpt.String())
+	}
 
 	// check that all filesystems have a path
 	fsMap["root"] = "/"
