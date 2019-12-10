@@ -1,6 +1,7 @@
 package ign2to3
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"reflect"
@@ -42,6 +43,9 @@ func (e UsesOwnLinkError) Error() string {
 	return fmt.Sprintf("%s uses link in config %q", e.Name, e.LinkPath)
 }
 
+// UsesNetworkdError is the error for inlcuding networkd configs
+var UsesNetworkdError = errors.New("Config includes a networkd section")
+
 // Check returns if the config is translatable but does not do any translation.
 // fsMap is a map from v2 filesystem names to the paths under which they should
 // be mounted in v3.
@@ -51,6 +55,10 @@ func Check(cfg old.Config, fsMap map[string]string) error {
 	if rpt.IsFatal() || rpt.IsDeprecated() {
 		// disallow any deprecated fields
 		return fmt.Errorf("Invalid input config:\n%s", rpt.String())
+	}
+
+	if len(cfg.Networkd.Units) != 0 {
+		return UsesNetworkdError
 	}
 
 	// check that all filesystems have a path
@@ -131,6 +139,7 @@ func Translate(cfg old.Config, fsMap map[string]string) (types.Config, error) {
 		return types.Config{}, err
 	}
 	res := types.Config{
+		// Ignition section
 		Ignition: types.Ignition{
 			Version: "3.0.0",
 			Config: types.IgnitionConfig{
@@ -147,6 +156,7 @@ func Translate(cfg old.Config, fsMap map[string]string) (types.Config, error) {
 				HTTPTotal: cfg.Ignition.Timeouts.HTTPTotal,
 			},
 		},
+		// Passwd section
 	}
 	return res, nil
 }
