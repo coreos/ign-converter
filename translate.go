@@ -157,6 +157,21 @@ func Translate(cfg old.Config, fsMap map[string]string) (types.Config, error) {
 			},
 		},
 		// Passwd section
+		Passwd: types.Passwd{
+			Users: translateUsers(cfg.Passwd.Users),
+			Groups: translateGroups(cfg.Passwd.Groups),
+		},
+		Systemd: types.Systemd{
+			Units: translateUnits(cfg.Systemd.Units),
+		},
+		Storage: types.Storage{
+			Disks: translateDisks(cfg.Storage.Disks),
+			Raid: translateRaid(cfg.Storage.Raid),
+			Filesystems: translateFilesystems(cfg.Storage.Filesystems),
+			Files: translateFiles(cfg.Storage.Files),
+			Directories: translateDirectories(cfg.Storage.Directories),
+			Links: translateLinks(cfg.Storage.Links),
+		},
 	}
 	return res, nil
 }
@@ -186,5 +201,41 @@ func translateCAs(refs []old.CaReference) (ret []types.CaReference) {
 			},
 		})
 	}
+	return
+}
+
+func translateUsers(users []old.PasswdUser) (ret []types.PasswdUser) {
+	return
+}
+
+func translateGroups(groups []old.PasswdGroup) (ret []types.PasswdGroup) {
+	return
+}
+
+func translateUnits(units []old.Unit) (ret []types.Unit) {
+	return
+}
+
+func translateDisks(disks []old.Disk) (ret []types.Disk) {
+	return
+}
+
+func translateRaid(raids []old.Raid) (ret []types.Raid) {
+	return
+}
+
+func translateFilesystems(fss []old.Filesystem) (ret []types.Filesystem) {
+	return
+}
+
+func translateFiles(files []old.File) (ret []types.File) {
+	return
+}
+
+func translateLinks(links []old.Link) (ret []types.Link) {
+	return
+}
+
+func translateDirectories(dirs []old.Directory) (ret []types.Directory) {
 	return
 }
