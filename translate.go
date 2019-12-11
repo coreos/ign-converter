@@ -205,6 +205,37 @@ func translateCAs(refs []old.CaReference) (ret []types.CaReference) {
 }
 
 func translateUsers(users []old.PasswdUser) (ret []types.PasswdUser) {
+	for _, u := range users {
+		ret = append(ret, types.PasswdUser{
+			Name: u.Name,
+			PasswordHash: u.PasswordHash,
+			SSHAuthorizedKeys: translateUserSSH(u.SSHAuthorizedKeys),
+			UID: u.UID,
+			Gecos: strP(u.Gecos),
+			HomeDir: strP(u.HomeDir),
+			NoCreateHome: boolP(u.NoCreateHome),
+			PrimaryGroup: strP(u.PrimaryGroup),
+			Groups: translateUserGroups(u.Groups),
+			NoUserGroup: boolP(u.NoUserGroup),
+			NoLogInit: boolP(u.NoLogInit),
+			Shell: strP(u.Shell),
+			System: boolP(u.System),
+		})
+	}
+	return
+}
+
+func translateUserSSH(in []old.SSHAuthorizedKey) (ret []types.SSHAuthorizedKey) {
+	for _, k := range in {
+		ret = append(ret, types.SSHAuthorizedKey(k))
+	}
+	return
+}
+
+func translateUserGroups(in []old.Group) (ret []types.Group) {
+	for _, g := range in {
+		ret = append(ret, types.Group(g))
+	}
 	return
 }
 
