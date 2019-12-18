@@ -96,7 +96,7 @@ func main() {
 	if err != nil || rpt.IsFatal() {
 		fail("Error parsing config: %v\n%v", err, rpt)
 	}
-	
+
 	newCfg, err := ign2to3.Translate(cfg, mapping)
 	if err != nil {
 		fail("Failed to translate config: %v", err)

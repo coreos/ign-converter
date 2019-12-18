@@ -144,7 +144,7 @@ func Translate(cfg old.Config, fsMap map[string]string) (types.Config, error) {
 			Version: "3.0.0",
 			Config: types.IgnitionConfig{
 				Replace: translateCfgRef(cfg.Ignition.Config.Replace),
-				Merge: translateCfgRefs(cfg.Ignition.Config.Append),
+				Merge:   translateCfgRefs(cfg.Ignition.Config.Append),
 			},
 			Security: types.Security{
 				TLS: types.TLS{
@@ -153,24 +153,24 @@ func Translate(cfg old.Config, fsMap map[string]string) (types.Config, error) {
 			},
 			Timeouts: types.Timeouts{
 				HTTPResponseHeaders: cfg.Ignition.Timeouts.HTTPResponseHeaders,
-				HTTPTotal: cfg.Ignition.Timeouts.HTTPTotal,
+				HTTPTotal:           cfg.Ignition.Timeouts.HTTPTotal,
 			},
 		},
 		// Passwd section
 		Passwd: types.Passwd{
-			Users: translateUsers(cfg.Passwd.Users),
+			Users:  translateUsers(cfg.Passwd.Users),
 			Groups: translateGroups(cfg.Passwd.Groups),
 		},
 		Systemd: types.Systemd{
 			Units: translateUnits(cfg.Systemd.Units),
 		},
 		Storage: types.Storage{
-			Disks: translateDisks(cfg.Storage.Disks),
-			Raid: translateRaid(cfg.Storage.Raid),
+			Disks:       translateDisks(cfg.Storage.Disks),
+			Raid:        translateRaid(cfg.Storage.Raid),
 			Filesystems: translateFilesystems(cfg.Storage.Filesystems, fsMap),
-			Files: translateFiles(cfg.Storage.Files, fsMap),
+			Files:       translateFiles(cfg.Storage.Files, fsMap),
 			Directories: translateDirectories(cfg.Storage.Directories, fsMap),
-			Links: translateLinks(cfg.Storage.Links, fsMap),
+			Links:       translateLinks(cfg.Storage.Links, fsMap),
 		},
 	}
 	return res, nil
@@ -207,19 +207,19 @@ func translateCAs(refs []old.CaReference) (ret []types.CaReference) {
 func translateUsers(users []old.PasswdUser) (ret []types.PasswdUser) {
 	for _, u := range users {
 		ret = append(ret, types.PasswdUser{
-			Name: u.Name,
-			PasswordHash: u.PasswordHash,
+			Name:              u.Name,
+			PasswordHash:      u.PasswordHash,
 			SSHAuthorizedKeys: translateUserSSH(u.SSHAuthorizedKeys),
-			UID: u.UID,
-			Gecos: strP(u.Gecos),
-			HomeDir: strP(u.HomeDir),
-			NoCreateHome: boolP(u.NoCreateHome),
-			PrimaryGroup: strP(u.PrimaryGroup),
-			Groups: translateUserGroups(u.Groups),
-			NoUserGroup: boolP(u.NoUserGroup),
-			NoLogInit: boolP(u.NoLogInit),
-			Shell: strP(u.Shell),
-			System: boolP(u.System),
+			UID:               u.UID,
+			Gecos:             strP(u.Gecos),
+			HomeDir:           strP(u.HomeDir),
+			NoCreateHome:      boolP(u.NoCreateHome),
+			PrimaryGroup:      strP(u.PrimaryGroup),
+			Groups:            translateUserGroups(u.Groups),
+			NoUserGroup:       boolP(u.NoUserGroup),
+			NoLogInit:         boolP(u.NoLogInit),
+			Shell:             strP(u.Shell),
+			System:            boolP(u.System),
 		})
 	}
 	return
@@ -242,10 +242,10 @@ func translateUserGroups(in []old.Group) (ret []types.Group) {
 func translateGroups(groups []old.PasswdGroup) (ret []types.PasswdGroup) {
 	for _, g := range groups {
 		ret = append(ret, types.PasswdGroup{
-			Name: g.Name,
-			Gid: g.Gid,
+			Name:         g.Name,
+			Gid:          g.Gid,
 			PasswordHash: strP(g.PasswordHash),
-			System: boolP(g.System),
+			System:       boolP(g.System),
 		})
 	}
 	return
@@ -254,11 +254,11 @@ func translateGroups(groups []old.PasswdGroup) (ret []types.PasswdGroup) {
 func translateUnits(units []old.Unit) (ret []types.Unit) {
 	for _, u := range units {
 		ret = append(ret, types.Unit{
-			Name: u.Name,
-			Enabled: u.Enabled,
-			Mask: boolP(u.Mask),
+			Name:     u.Name,
+			Enabled:  u.Enabled,
+			Mask:     boolP(u.Mask),
 			Contents: strP(u.Contents),
-			Dropins: translateDropins(u.Dropins),
+			Dropins:  translateDropins(u.Dropins),
 		})
 	}
 	return
@@ -267,7 +267,7 @@ func translateUnits(units []old.Unit) (ret []types.Unit) {
 func translateDropins(dropins []old.SystemdDropin) (ret []types.Dropin) {
 	for _, d := range dropins {
 		ret = append(ret, types.Dropin{
-			Name: d.Name,
+			Name:     d.Name,
 			Contents: strP(d.Contents),
 		})
 	}
@@ -277,8 +277,8 @@ func translateDropins(dropins []old.SystemdDropin) (ret []types.Dropin) {
 func translateDisks(disks []old.Disk) (ret []types.Disk) {
 	for _, d := range disks {
 		ret = append(ret, types.Disk{
-			Device: d.Device,
-			WipeTable: boolP(d.WipeTable),
+			Device:     d.Device,
+			WipeTable:  boolP(d.WipeTable),
 			Partitions: translatePartitions(d.Partitions),
 		})
 	}
@@ -288,14 +288,14 @@ func translateDisks(disks []old.Disk) (ret []types.Disk) {
 func translatePartitions(parts []old.Partition) (ret []types.Partition) {
 	for _, p := range parts {
 		ret = append(ret, types.Partition{
-			Label: p.Label,
-			Number: p.Number,
-			SizeMiB: p.SizeMiB,
-			StartMiB: p.StartMiB,
-			TypeGUID: strP(p.TypeGUID),
-			GUID: strP(p.GUID),
+			Label:              p.Label,
+			Number:             p.Number,
+			SizeMiB:            p.SizeMiB,
+			StartMiB:           p.StartMiB,
+			TypeGUID:           strP(p.TypeGUID),
+			GUID:               strP(p.GUID),
 			WipePartitionEntry: boolP(p.WipePartitionEntry),
-			ShouldExist: p.ShouldExist,
+			ShouldExist:        p.ShouldExist,
 		})
 	}
 	return
@@ -304,10 +304,10 @@ func translatePartitions(parts []old.Partition) (ret []types.Partition) {
 func translateRaid(raids []old.Raid) (ret []types.Raid) {
 	for _, r := range raids {
 		ret = append(ret, types.Raid{
-			Name: r.Name,
-			Level: r.Level,
+			Name:    r.Name,
+			Level:   r.Level,
 			Devices: translateDevices(r.Devices),
-			Spares: intP(r.Spares),
+			Spares:  intP(r.Spares),
 			Options: translateRaidOptions(r.Options),
 		})
 	}
@@ -334,13 +334,13 @@ func translateFilesystems(fss []old.Filesystem, m map[string]string) (ret []type
 			f.Mount = &old.Mount{}
 		}
 		ret = append(ret, types.Filesystem{
-			Device: f.Mount.Device,
-			Format: strP(f.Mount.Format),
+			Device:         f.Mount.Device,
+			Format:         strP(f.Mount.Format),
 			WipeFilesystem: boolP(f.Mount.WipeFilesystem),
-			Label: f.Mount.Label,
-			UUID: f.Mount.UUID,
-			Options: translateFilesystemOptions(f.Mount.Options),
-			Path: strP(m[f.Name]),
+			Label:          f.Mount.Label,
+			UUID:           f.Mount.UUID,
+			Options:        translateFilesystemOptions(f.Mount.Options),
+			Path:           strP(m[f.Name]),
 		})
 	}
 	return
@@ -357,11 +357,11 @@ func translateNode(n old.Node, m map[string]string) types.Node {
 	return types.Node{
 		Path: filepath.Join(m[n.Filesystem], n.Path),
 		User: types.NodeUser{
-			ID: n.User.ID,
+			ID:   n.User.ID,
 			Name: strP(n.User.Name),
 		},
 		Group: types.NodeGroup{
-			ID: n.User.ID,
+			ID:   n.User.ID,
 			Name: strP(n.User.Name),
 		},
 		Overwrite: n.Overwrite,
@@ -378,7 +378,7 @@ func translateFiles(files []old.File, m map[string]string) (ret []types.File) {
 		}
 		c := types.FileContents{
 			Compression: strP(f.Contents.Compression),
-			Source: strP(f.Contents.Source),
+			Source:      strP(f.Contents.Source),
 		}
 		c.Verification.Hash = f.FileEmbedded1.Contents.Verification.Hash
 
@@ -397,7 +397,7 @@ func translateLinks(links []old.Link, m map[string]string) (ret []types.Link) {
 		ret = append(ret, types.Link{
 			Node: translateNode(l.Node, m),
 			LinkEmbedded1: types.LinkEmbedded1{
-				Hard: boolP(l.Hard),
+				Hard:   boolP(l.Hard),
 				Target: l.Target,
 			},
 		})
