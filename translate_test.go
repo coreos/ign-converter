@@ -15,11 +15,11 @@
 package ign2to3
 
 import (
-	//"reflect"
 	"testing"
 
 	old "github.com/coreos/ignition/config/v2_4_experimental/types"
-	//"github.com/coreos/ignition/v2/config/v3_0/types"
+	"github.com/coreos/ignition/v2/config/v3_0/types"
+	"github.com/stretchr/testify/assert"
 )
 
 type input struct {
@@ -34,7 +34,7 @@ var (
 
 	exhaustiveConfig = old.Config{
 		Ignition: old.Ignition{
-			Version: "2.3.0",
+			Version: "2.4.0-experimental",
 			Config: old.IgnitionConfig{
 				Append: []old.ConfigReference{
 					{
@@ -90,10 +90,10 @@ var (
 			},
 			Raid: []old.Raid{
 				{
-					Name: "array",
-					Level: "raid10",
+					Name:    "array",
+					Level:   "raid10",
 					Devices: []old.Device{"/dev/sdb", "/dev/sdc"},
-					Spares: 1,
+					Spares:  1,
 					Options: []old.RaidOption{"foobar"},
 				},
 			},
@@ -114,8 +114,8 @@ var (
 				{
 					Node: old.Node{
 						Filesystem: "var",
-						Path: "/varfile",
-						Overwrite: boolP(false),
+						Path:       "/varfile",
+						Overwrite:  boolP(false),
 						User: &old.NodeUser{
 							ID: intP(1000),
 						},
@@ -125,10 +125,10 @@ var (
 					},
 					FileEmbedded1: old.FileEmbedded1{
 						Append: true,
-						Mode: intP(420),
+						Mode:   intP(420),
 						Contents: old.FileContents{
 							Compression: "gzip",
-							Source: "https://example.com",
+							Source:      "https://example.com",
 							Verification: old.Verification{
 								Hash: &aSha512Hash,
 							},
@@ -140,8 +140,8 @@ var (
 				{
 					Node: old.Node{
 						Filesystem: "root",
-						Path: "/rootdir",
-						Overwrite: boolP(true),
+						Path:       "/rootdir",
+						Overwrite:  boolP(true),
 						User: &old.NodeUser{
 							ID: intP(1000),
 						},
@@ -158,8 +158,8 @@ var (
 				{
 					Node: old.Node{
 						Filesystem: "root",
-						Path: "/rootlink",
-						Overwrite: boolP(true),
+						Path:       "/rootlink",
+						Overwrite:  boolP(true),
 						User: &old.NodeUser{
 							ID: intP(1000),
 						},
@@ -168,14 +168,153 @@ var (
 						},
 					},
 					LinkEmbedded1: old.LinkEmbedded1{
-						Hard: false,
+						Hard:   false,
 						Target: "/foobar",
 					},
 				},
 			},
 		},
 	}
-	exhaustiveMap = map[string]string{"var": "/var"}
+	exhaustiveMap     = map[string]string{"var": "/var"}
+	exhaustiveConfig3 = types.Config{
+		Ignition: types.Ignition{
+			Version: "3.0.0",
+			Config: types.IgnitionConfig{
+				Merge: []types.ConfigReference{
+					{
+						Source: strP("https://example.com"),
+						Verification: types.Verification{
+							Hash: &aSha512Hash,
+						},
+					},
+				},
+				Replace: types.ConfigReference{
+					Source: strP("https://example.com"),
+					Verification: types.Verification{
+						Hash: &aSha512Hash,
+					},
+				},
+			},
+			Timeouts: types.Timeouts{
+				HTTPResponseHeaders: intP(5),
+				HTTPTotal:           intP(10),
+			},
+			Security: types.Security{
+				TLS: types.TLS{
+					CertificateAuthorities: []types.CaReference{
+						{
+							Source: "https://example.com",
+							Verification: types.Verification{
+								Hash: &aSha512Hash,
+							},
+						},
+					},
+				},
+			},
+			// Proxy is unsupported
+		},
+		Storage: types.Storage{
+			Disks: []types.Disk{
+				{
+					Device:    "/dev/sda",
+					WipeTable: boolP(true),
+					Partitions: []types.Partition{
+						{
+							Label:              strP("var"),
+							Number:             1,
+							SizeMiB:            intP(5000),
+							StartMiB:           intP(2048),
+							TypeGUID:           &aUUID,
+							GUID:               &aUUID,
+							WipePartitionEntry: boolP(true),
+							ShouldExist:        boolP(true),
+						},
+					},
+				},
+			},
+			Raid: []types.Raid{
+				{
+					Name:    "array",
+					Level:   "raid10",
+					Devices: []types.Device{"/dev/sdb", "/dev/sdc"},
+					Spares:  intP(1),
+					Options: []types.RaidOption{"foobar"},
+				},
+			},
+			Filesystems: []types.Filesystem{
+				{
+					Path:           strP("/var"),
+					Device:         "/dev/disk/by-partlabel/var",
+					Format:         strP("xfs"),
+					WipeFilesystem: boolP(true),
+					Label:          strP("var"),
+					UUID:           &aUUID,
+					Options:        []types.FilesystemOption{"rw"},
+				},
+			},
+			Files: []types.File{
+				{
+					Node: types.Node{
+						Path:      "/var/varfile",
+						Overwrite: boolP(false),
+						User: types.NodeUser{
+							ID: intP(1000),
+						},
+						Group: types.NodeGroup{
+							Name: strP("groupname"),
+						},
+					},
+					FileEmbedded1: types.FileEmbedded1{
+						Mode: intP(420),
+						Append: []types.FileContents{
+							{
+								Compression: strP("gzip"),
+								Source:      strP("https://example.com"),
+								Verification: types.Verification{
+									Hash: &aSha512Hash,
+								},
+							},
+						},
+					},
+				},
+			},
+			Directories: []types.Directory{
+				{
+					Node: types.Node{
+						Path:      "/rootdir",
+						Overwrite: boolP(true),
+						User: types.NodeUser{
+							ID: intP(1000),
+						},
+						Group: types.NodeGroup{
+							Name: strP("groupname"),
+						},
+					},
+					DirectoryEmbedded1: types.DirectoryEmbedded1{
+						Mode: intP(420),
+					},
+				},
+			},
+			Links: []types.Link{
+				{
+					Node: types.Node{
+						Path:      "/rootlink",
+						Overwrite: boolP(true),
+						User: types.NodeUser{
+							ID: intP(1000),
+						},
+						Group: types.NodeGroup{
+							Name: strP("groupname"),
+						},
+					},
+					LinkEmbedded1: types.LinkEmbedded1{
+						Hard:   boolP(false),
+						Target: "/foobar",
+					},
+				},
+			},
+		},
+	}
 )
 
 func TestCheck(t *testing.T) {
@@ -203,4 +342,12 @@ func TestCheck(t *testing.T) {
 			t.Errorf("Bad config test %d: got ok, expected: %v", i, err)
 		}
 	}
+}
+
+func Test2To3(t *testing.T) {
+	res, err := Translate(exhaustiveConfig, exhaustiveMap)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+	assert.Equal(t, exhaustiveConfig3, res, "Configs Differed")
 }

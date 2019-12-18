@@ -60,6 +60,9 @@ func (e UsesOwnLinkError) Error() string {
 // UsesNetworkdError is the error for inlcuding networkd configs
 var UsesNetworkdError = errors.New("Config includes a networkd section")
 
+// UsesProxyError is the error for inlcuding the proxy section
+var UsesProxyError = errors.New("Config includes a proxy section")
+
 // Check returns if the config is translatable but does not do any translation.
 // fsMap is a map from v2 filesystem names to the paths under which they should
 // be mounted in v3.
@@ -73,6 +76,11 @@ func Check(cfg old.Config, fsMap map[string]string) error {
 
 	if len(cfg.Networkd.Units) != 0 {
 		return UsesNetworkdError
+	}
+	if cfg.Ignition.Proxy.HTTPProxy != "" ||
+		cfg.Ignition.Proxy.HTTPSProxy != "" || 
+		len(cfg.Ignition.Proxy.NoProxy) != 0 {
+		return UsesProxyError
 	}
 
 	// check that all filesystems have a path
@@ -382,8 +390,8 @@ func translateNode(n old.Node, m map[string]string) types.Node {
 			Name: strP(n.User.Name),
 		},
 		Group: types.NodeGroup{
-			ID:   n.User.ID,
-			Name: strP(n.User.Name),
+			ID:   n.Group.ID,
+			Name: strP(n.Group.Name),
 		},
 		Overwrite: n.Overwrite,
 	}
