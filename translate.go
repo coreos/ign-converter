@@ -76,6 +76,9 @@ func Check(cfg old.Config, fsMap map[string]string) error {
 	}
 
 	// check that all filesystems have a path
+	if fsMap == nil {
+		fsMap = map[string]string{}
+	}
 	fsMap["root"] = "/"
 	for _, fs := range cfg.Storage.Filesystems {
 		if _, ok := fsMap[fs.Name]; !ok {
@@ -124,7 +127,7 @@ func Check(cfg old.Config, fsMap map[string]string) error {
 	}
 	for _, link := range cfg.Storage.Links {
 		path := filepath.Join("/", fsMap[link.Filesystem], link.Path)
-		name := fmt.Sprintf("Directory: %s", path)
+		name := fmt.Sprintf("Link: %s", path)
 		if duplicate, isDup := entryMap[path]; isDup {
 			return &DuplicateInodeError{duplicate, name}
 		}
@@ -141,7 +144,7 @@ func Check(cfg old.Config, fsMap map[string]string) error {
 
 func checkPathUsesLink(links []string, path string) string {
 	for _, l := range links {
-		if strings.HasPrefix(path, l) {
+		if strings.HasPrefix(path, l) && path != l {
 			return l
 		}
 	}
@@ -344,6 +347,10 @@ func translateRaidOptions(options []old.RaidOption) (ret []types.RaidOption) {
 
 func translateFilesystems(fss []old.Filesystem, m map[string]string) (ret []types.Filesystem) {
 	for _, f := range fss {
+		if f.Name == "root" {
+			// root is implied
+			continue
+		}
 		if f.Mount == nil {
 			f.Mount = &old.Mount{}
 		}
