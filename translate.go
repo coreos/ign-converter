@@ -167,10 +167,10 @@ func Translate(cfg old.Config, fsMap map[string]string) (types.Config, error) {
 		Storage: types.Storage{
 			Disks: translateDisks(cfg.Storage.Disks),
 			Raid: translateRaid(cfg.Storage.Raid),
-			Filesystems: translateFilesystems(cfg.Storage.Filesystems),
-			Files: translateFiles(cfg.Storage.Files),
-			Directories: translateDirectories(cfg.Storage.Directories),
-			Links: translateLinks(cfg.Storage.Links),
+			Filesystems: translateFilesystems(cfg.Storage.Filesystems, fsMap),
+			Files: translateFiles(cfg.Storage.Files, fsMap),
+			Directories: translateDirectories(cfg.Storage.Directories, fsMap),
+			Links: translateLinks(cfg.Storage.Links, fsMap),
 		},
 	}
 	return res, nil
@@ -240,33 +240,179 @@ func translateUserGroups(in []old.Group) (ret []types.Group) {
 }
 
 func translateGroups(groups []old.PasswdGroup) (ret []types.PasswdGroup) {
+	for _, g := range groups {
+		ret = append(ret, types.PasswdGroup{
+			Name: g.Name,
+			Gid: g.Gid,
+			PasswordHash: strP(g.PasswordHash),
+			System: boolP(g.System),
+		})
+	}
 	return
 }
 
 func translateUnits(units []old.Unit) (ret []types.Unit) {
+	for _, u := range units {
+		ret = append(ret, types.Unit{
+			Name: u.Name,
+			Enabled: u.Enabled,
+			Mask: boolP(u.Mask),
+			Contents: strP(u.Contents),
+			Dropins: translateDropins(u.Dropins),
+		})
+	}
+	return
+}
+
+func translateDropins(dropins []old.SystemdDropin) (ret []types.Dropin) {
+	for _, d := range dropins {
+		ret = append(ret, types.Dropin{
+			Name: d.Name,
+			Contents: strP(d.Contents),
+		})
+	}
 	return
 }
 
 func translateDisks(disks []old.Disk) (ret []types.Disk) {
+	for _, d := range disks {
+		ret = append(ret, types.Disk{
+			Device: d.Device,
+			WipeTable: boolP(d.WipeTable),
+			Partitions: translatePartitions(d.Partitions),
+		})
+	}
+	return
+}
+
+func translatePartitions(parts []old.Partition) (ret []types.Partition) {
+	for _, p := range parts {
+		ret = append(ret, types.Partition{
+			Label: p.Label,
+			Number: p.Number,
+			SizeMiB: p.SizeMiB,
+			StartMiB: p.StartMiB,
+			TypeGUID: strP(p.TypeGUID),
+			GUID: strP(p.GUID),
+			WipePartitionEntry: boolP(p.WipePartitionEntry),
+			ShouldExist: p.ShouldExist,
+		})
+	}
 	return
 }
 
 func translateRaid(raids []old.Raid) (ret []types.Raid) {
+	for _, r := range raids {
+		ret = append(ret, types.Raid{
+			Name: r.Name,
+			Level: r.Level,
+			Devices: translateDevices(r.Devices),
+			Spares: intP(r.Spares),
+			Options: translateRaidOptions(r.Options),
+		})
+	}
 	return
 }
 
-func translateFilesystems(fss []old.Filesystem) (ret []types.Filesystem) {
+func translateDevices(devices []old.Device) (ret []types.Device) {
+	for _, d := range devices {
+		ret = append(ret, types.Device(d))
+	}
 	return
 }
 
-func translateFiles(files []old.File) (ret []types.File) {
+func translateRaidOptions(options []old.RaidOption) (ret []types.RaidOption) {
+	for _, o := range options {
+		ret = append(ret, types.RaidOption(o))
+	}
 	return
 }
 
-func translateLinks(links []old.Link) (ret []types.Link) {
+func translateFilesystems(fss []old.Filesystem, m map[string]string) (ret []types.Filesystem) {
+	for _, f := range fss {
+		if f.Mount == nil {
+			f.Mount = &old.Mount{}
+		}
+		ret = append(ret, types.Filesystem{
+			Device: f.Mount.Device,
+			Format: strP(f.Mount.Format),
+			WipeFilesystem: boolP(f.Mount.WipeFilesystem),
+			Label: f.Mount.Label,
+			UUID: f.Mount.UUID,
+			Options: translateFilesystemOptions(f.Mount.Options),
+			Path: strP(m[f.Name]),
+		})
+	}
 	return
 }
 
-func translateDirectories(dirs []old.Directory) (ret []types.Directory) {
+func translateFilesystemOptions(options []old.MountOption) (ret []types.FilesystemOption) {
+	for _, o := range options {
+		ret = append(ret, types.FilesystemOption(o))
+	}
+	return
+}
+
+func translateNode(n old.Node, m map[string]string) types.Node {
+	return types.Node{
+		Path: filepath.Join(m[n.Filesystem], n.Path),
+		User: types.NodeUser{
+			ID: n.User.ID,
+			Name: strP(n.User.Name),
+		},
+		Group: types.NodeGroup{
+			ID: n.User.ID,
+			Name: strP(n.User.Name),
+		},
+		Overwrite: n.Overwrite,
+	}
+}
+
+func translateFiles(files []old.File, m map[string]string) (ret []types.File) {
+	for _, f := range files {
+		file := types.File{
+			Node: translateNode(f.Node, m),
+			FileEmbedded1: types.FileEmbedded1{
+				Mode: f.Mode,
+			},
+		}
+		c := types.FileContents{
+			Compression: strP(f.Contents.Compression),
+			Source: strP(f.Contents.Source),
+		}
+		c.Verification.Hash = f.FileEmbedded1.Contents.Verification.Hash
+
+		if f.Append {
+			file.Append = []types.FileContents{c}
+		} else {
+			file.Contents = c
+		}
+		ret = append(ret, file)
+	}
+	return
+}
+
+func translateLinks(links []old.Link, m map[string]string) (ret []types.Link) {
+	for _, l := range links {
+		ret = append(ret, types.Link{
+			Node: translateNode(l.Node, m),
+			LinkEmbedded1: types.LinkEmbedded1{
+				Hard: boolP(l.Hard),
+				Target: l.Target,
+			},
+		})
+	}
+	return
+}
+
+func translateDirectories(dirs []old.Directory, m map[string]string) (ret []types.Directory) {
+	for _, d := range dirs {
+		ret = append(ret, types.Directory{
+			Node: translateNode(d.Node, m),
+			DirectoryEmbedded1: types.DirectoryEmbedded1{
+				Mode: d.Mode,
+			},
+		})
+	}
 	return
 }

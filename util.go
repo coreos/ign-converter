@@ -13,3 +13,10 @@ func boolP(in bool) *bool {
 	}
 	return &in
 }
+
+func intP(in int) *int {
+	if in == 0 {
+		return nil
+	}
+	return &in
+}
