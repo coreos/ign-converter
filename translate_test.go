@@ -372,3 +372,11 @@ func Test2To3(t *testing.T) {
 	}
 	assert.Equal(t, exhaustiveConfig3, res, "Configs Differed")
 }
+
+func Test3To2(t *testing.T) {
+	_, err := Translate3to2(exhaustiveConfig3)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+	// TODO add assert
+}

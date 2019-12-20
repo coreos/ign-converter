@@ -25,6 +25,7 @@ import (
 	"github.com/coreos/ign2to3"
 
 	"github.com/coreos/ignition/config/v2_4_experimental"
+	"github.com/coreos/ignition/v2/config/v3_0"
 )
 
 func fail(format string, args ...interface{}) {
@@ -55,15 +56,17 @@ func getMapping(fname string) map[string]string {
 
 func main() {
 	var (
-		input       string
-		output      string
-		fsMap       string
-		versionFlag bool
+		input         string
+		output        string
+		fsMap         string
+		versionFlag   bool
+		downtranslate bool
 	)
 	flag.BoolVar(&versionFlag, "version", false, "print the version and exit")
 	flag.StringVar(&input, "input", "", "read from input file instead of stdin")
 	flag.StringVar(&fsMap, "fsmap", "", "file containing mapping from filesystem name to path")
 	flag.StringVar(&output, "output", "", "write to output file instead of stdout")
+	flag.BoolVar(&downtranslate, "downtranslate", false, "translate a spec 3 config down to spec 2")
 
 	flag.Parse()
 
@@ -88,22 +91,42 @@ func main() {
 		fail("failed to read %s: %v\n", infile.Name(), err)
 	}
 
-	mapping := getMapping(fsMap)
+	var dataOut []byte
+	if downtranslate {
+		// translate from 3 to 2
+		cfg, rpt, err := v3_0.Parse(dataIn)
+		fmt.Fprintf(os.Stderr, "%s", rpt.String())
+		if err != nil || rpt.IsFatal() {
+			fail("Error parsing spec v3 config: %v\n%v", err, rpt)
+		}
 
-	// parse to 2.4.0-experimental
-	cfg, rpt, err := v2_4_experimental.Parse(dataIn)
-	fmt.Fprintf(os.Stderr, "%s", rpt.String())
-	if err != nil || rpt.IsFatal() {
-		fail("Error parsing config: %v\n%v", err, rpt)
-	}
+		newCfg, err := ign2to3.Translate3to2(cfg)
+		if err != nil {
+			fail("Failed to translate config from 3 to 2: %v", err)
+		}
+		dataOut, err = json.Marshal(newCfg)
+		if err != nil {
+			fail("Failed to marshal json: %v", err)
+		}
+	} else {
+		// translate from 2 to 3
+		mapping := getMapping(fsMap)
 
-	newCfg, err := ign2to3.Translate(cfg, mapping)
-	if err != nil {
-		fail("Failed to translate config: %v", err)
-	}
-	dataOut, err := json.Marshal(newCfg)
-	if err != nil {
-		fail("Failed to marshal json: %v", err)
+		// parse to 2.4.0-experimental
+		cfg, rpt, err := v2_4_experimental.Parse(dataIn)
+		fmt.Fprintf(os.Stderr, "%s", rpt.String())
+		if err != nil || rpt.IsFatal() {
+			fail("Error parsing spec v2 config: %v\n%v", err, rpt)
+		}
+
+		newCfg, err := ign2to3.Translate(cfg, mapping)
+		if err != nil {
+			fail("Failed to translate config from 2 to 3: %v", err)
+		}
+		dataOut, err = json.Marshal(newCfg)
+		if err != nil {
+			fail("Failed to marshal json: %v", err)
+		}
 	}
 
 	if output != "" {
