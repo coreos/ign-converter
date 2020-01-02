@@ -67,7 +67,6 @@ var UsesProxyError = errors.New("Config includes a proxy section")
 // fsMap is a map from v2 filesystem names to the paths under which they should
 // be mounted in v3.
 func Check(cfg old.Config, fsMap map[string]string) error {
-	// TODO: validate cfg
 	rpt := oldValidate.ValidateWithoutSource(reflect.ValueOf(cfg))
 	if rpt.IsFatal() || rpt.IsDeprecated() {
 		// disallow any deprecated fields
@@ -399,6 +398,10 @@ func translateNode(n old.Node, m map[string]string) types.Node {
 
 func translateFiles(files []old.File, m map[string]string) (ret []types.File) {
 	for _, f := range files {
+		// 2.x files are overwrite by default
+		if f.Node.Overwrite == nil {
+			f.Node.Overwrite = boolP(true)
+		}
 		file := types.File{
 			Node: translateNode(f.Node, m),
 			FileEmbedded1: types.FileEmbedded1{

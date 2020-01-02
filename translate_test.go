@@ -115,7 +115,7 @@ var (
 					Node: old.Node{
 						Filesystem: "var",
 						Path:       "/varfile",
-						Overwrite:  boolP(false),
+						Overwrite:  boolPStrict(false),
 						User: &old.NodeUser{
 							ID: intP(1000),
 						},
@@ -256,7 +256,7 @@ var (
 				{
 					Node: types.Node{
 						Path:      "/var/varfile",
-						Overwrite: boolP(false),
+						Overwrite: boolPStrict(false),
 						User: types.NodeUser{
 							ID: intP(1000),
 						},
