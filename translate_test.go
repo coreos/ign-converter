@@ -135,6 +135,15 @@ var (
 						},
 					},
 				},
+				{
+					Node: old.Node{
+						Filesystem: "root",
+						Path:       "/empty",
+					},
+					FileEmbedded1: old.FileEmbedded1{
+						Mode: intP(420),
+					},
+				},
 			},
 			Directories: []old.Directory{
 				{
@@ -275,6 +284,15 @@ var (
 								},
 							},
 						},
+					},
+				},
+				{
+					Node: types.Node{
+						Path:      "/empty",
+						Overwrite: boolPStrict(true),
+					},
+					FileEmbedded1: types.FileEmbedded1{
+						Mode: intP(420),
 					},
 				},
 			},

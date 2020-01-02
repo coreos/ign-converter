@@ -382,6 +382,12 @@ func translateFilesystemOptions(options []old.MountOption) (ret []types.Filesyst
 }
 
 func translateNode(n old.Node, m map[string]string) types.Node {
+	if n.User == nil {
+		n.User = &old.NodeUser{}
+	}
+	if n.Group == nil {
+		n.Group = &old.NodeGroup{}
+	}
 	return types.Node{
 		Path: filepath.Join(m[n.Filesystem], n.Path),
 		User: types.NodeUser{
