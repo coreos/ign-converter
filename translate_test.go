@@ -17,7 +17,7 @@ package ign2to3
 import (
 	"testing"
 
-	old "github.com/coreos/ignition/config/v2_4_experimental/types"
+	old "github.com/coreos/ignition/config/v2_3/types"
 	"github.com/coreos/ignition/v2/config/v3_0/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -34,7 +34,7 @@ var (
 
 	exhaustiveConfig = old.Config{
 		Ignition: old.Ignition{
-			Version: "2.4.0-experimental",
+			Version: "2.3.0",
 			Config: old.IgnitionConfig{
 				Append: []old.ConfigReference{
 					{
