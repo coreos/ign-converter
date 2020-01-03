@@ -2,18 +2,34 @@ package ign2to3
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
 	"strings"
 
 	old "github.com/coreos/ignition/config/v2_2/types"
-	new "github.com/coreos/ignition/v2/config/v3_0/types"
-	newValidate "github.com/coreos/ignition/v2/config/validate"
+	oldValidate "github.com/coreos/ignition/config/validate"
+	"github.com/coreos/ignition/v2/config/v3_0/types"
+	"github.com/coreos/ignition/v2/config/validate"
 )
 
-func Translate3to2(cfg new.Config) (old.Config, error) {
-	rpt := newValidate.ValidateWithContext(cfg, nil)
+func Translate3to2(cfg types.Config) (old.Config, error) {
+	rpt := validate.ValidateWithContext(cfg, nil)
 	if rpt.IsFatal() {
 		return old.Config{}, fmt.Errorf("Invalid input config:\n%s", rpt.String())
 	}
+
+	// Check for potential issues in the spec 3 config
+
+	// Size and Start are sectors not MiB in 2.2, so we don't understand them.
+	// Fail for now
+	for _, d := range cfg.Storage.Disks {
+		for _, p := range d.Partitions {
+			if p.SizeMiB != nil || p.StartMiB != nil {
+				return old.Config{}, fmt.Errorf("SizeMiB and StartMiB in Storage.Disks.Partitions is not supported on 2.2")
+			}
+		}
+	}
+
 	// fsMap is a mapping of filesystems populated via the v3 config, to be
 	// used for v2 files sections. The naming of each section will be uniquely
 	// named by the path
@@ -54,17 +70,27 @@ func Translate3to2(cfg new.Config) (old.Config, error) {
 			Links:       translateLinks3to2(cfg.Storage.Links, fsList),
 		},
 	}
+
+	// Sanity check the returned config
+	oldrpt := oldValidate.ValidateWithoutSource(reflect.ValueOf(res))
+	if oldrpt.IsFatal() {
+		return old.Config{}, fmt.Errorf("Converted spec has unexpected fatal error:\n%s", oldrpt.String())
+	}
 	return res, nil
 }
 
-func generateFsList(fss []new.Filesystem) (ret []string) {
+func generateFsList(fss []types.Filesystem) (ret []string) {
 	for _, f := range fss {
+		if f.Path == nil {
+			// Spec 3 has defined the filesystem but has no path, which means we will not be writing files/dirs to it
+			continue
+		}
 		ret = append(ret, *f.Path)
 	}
 	return
 }
 
-func translateCfgRef3to2(ref new.ConfigReference) (ret *old.ConfigReference) {
+func translateCfgRef3to2(ref types.ConfigReference) (ret *old.ConfigReference) {
 	if ref.Source == nil {
 		return
 	}
@@ -74,14 +100,14 @@ func translateCfgRef3to2(ref new.ConfigReference) (ret *old.ConfigReference) {
 	return
 }
 
-func translateCfgRefs3to2(refs []new.ConfigReference) (ret []old.ConfigReference) {
+func translateCfgRefs3to2(refs []types.ConfigReference) (ret []old.ConfigReference) {
 	for _, ref := range refs {
 		ret = append(ret, *translateCfgRef3to2(ref))
 	}
 	return
 }
 
-func translateCAs3to2(refs []new.CaReference) (ret []old.CaReference) {
+func translateCAs3to2(refs []types.CaReference) (ret []old.CaReference) {
 	for _, ref := range refs {
 		ret = append(ret, old.CaReference{
 			Source: ref.Source,
@@ -93,7 +119,7 @@ func translateCAs3to2(refs []new.CaReference) (ret []old.CaReference) {
 	return
 }
 
-func translateUsers3to2(users []new.PasswdUser) (ret []old.PasswdUser) {
+func translateUsers3to2(users []types.PasswdUser) (ret []old.PasswdUser) {
 	for _, u := range users {
 		ret = append(ret, old.PasswdUser{
 			Name:              u.Name,
@@ -114,21 +140,21 @@ func translateUsers3to2(users []new.PasswdUser) (ret []old.PasswdUser) {
 	return
 }
 
-func translateUserSSH3to2(in []new.SSHAuthorizedKey) (ret []old.SSHAuthorizedKey) {
+func translateUserSSH3to2(in []types.SSHAuthorizedKey) (ret []old.SSHAuthorizedKey) {
 	for _, k := range in {
 		ret = append(ret, old.SSHAuthorizedKey(k))
 	}
 	return
 }
 
-func translateUserGroups3to2(in []new.Group) (ret []old.Group) {
+func translateUserGroups3to2(in []types.Group) (ret []old.Group) {
 	for _, g := range in {
 		ret = append(ret, old.Group(g))
 	}
 	return
 }
 
-func translateGroups3to2(groups []new.PasswdGroup) (ret []old.PasswdGroup) {
+func translateGroups3to2(groups []types.PasswdGroup) (ret []old.PasswdGroup) {
 	for _, g := range groups {
 		ret = append(ret, old.PasswdGroup{
 			Name:         g.Name,
@@ -140,7 +166,7 @@ func translateGroups3to2(groups []new.PasswdGroup) (ret []old.PasswdGroup) {
 	return
 }
 
-func translateUnits3to2(units []new.Unit) (ret []old.Unit) {
+func translateUnits3to2(units []types.Unit) (ret []old.Unit) {
 	for _, u := range units {
 		ret = append(ret, old.Unit{
 			Name:     u.Name,
@@ -153,7 +179,7 @@ func translateUnits3to2(units []new.Unit) (ret []old.Unit) {
 	return
 }
 
-func translateDropins3to2(dropins []new.Dropin) (ret []old.SystemdDropin) {
+func translateDropins3to2(dropins []types.Dropin) (ret []old.SystemdDropin) {
 	for _, d := range dropins {
 		ret = append(ret, old.SystemdDropin{
 			Name:     d.Name,
@@ -163,7 +189,7 @@ func translateDropins3to2(dropins []new.Dropin) (ret []old.SystemdDropin) {
 	return
 }
 
-func translateDisks3to2(disks []new.Disk) (ret []old.Disk) {
+func translateDisks3to2(disks []types.Disk) (ret []old.Disk) {
 	for _, d := range disks {
 		ret = append(ret, old.Disk{
 			Device:     d.Device,
@@ -174,13 +200,11 @@ func translateDisks3to2(disks []new.Disk) (ret []old.Disk) {
 	return
 }
 
-func translatePartitions3to2(parts []new.Partition) (ret []old.Partition) {
+func translatePartitions3to2(parts []types.Partition) (ret []old.Partition) {
 	for _, p := range parts {
 		ret = append(ret, old.Partition{
 			Label:    strV(p.Label),
 			Number:   p.Number,
-			Size:     intV(p.SizeMiB),
-			Start:    intV(p.StartMiB),
 			TypeGUID: strV(p.TypeGUID),
 			GUID:     strV(p.GUID),
 		})
@@ -188,7 +212,7 @@ func translatePartitions3to2(parts []new.Partition) (ret []old.Partition) {
 	return
 }
 
-func translateRaid3to2(raids []new.Raid) (ret []old.Raid) {
+func translateRaid3to2(raids []types.Raid) (ret []old.Raid) {
 	for _, r := range raids {
 		ret = append(ret, old.Raid{
 			Name:    r.Name,
@@ -201,27 +225,36 @@ func translateRaid3to2(raids []new.Raid) (ret []old.Raid) {
 	return
 }
 
-func translateDevices3to2(devices []new.Device) (ret []old.Device) {
+func translateDevices3to2(devices []types.Device) (ret []old.Device) {
 	for _, d := range devices {
 		ret = append(ret, old.Device(d))
 	}
 	return
 }
 
-func translateRaidOptions3to2(options []new.RaidOption) (ret []old.RaidOption) {
+func translateRaidOptions3to2(options []types.RaidOption) (ret []old.RaidOption) {
 	for _, o := range options {
 		ret = append(ret, old.RaidOption(o))
 	}
 	return
 }
 
-func translateFilesystems3to2(fss []new.Filesystem) (ret []old.Filesystem) {
+func translateFilesystems3to2(fss []types.Filesystem) (ret []old.Filesystem) {
+	// For filesystems that have no explicit path, we will uniquely name them with an int instead
+	inc := 1
 	for _, f := range fss {
+		var fsname string
+		if f.Path == nil {
+			fsname = strconv.Itoa(inc)
+			inc++
+		} else {
+			fsname = *f.Path
+		}
 
 		ret = append(ret, old.Filesystem{
 			// To construct a mapping for files/directories, we name the filesystem by path uniquely.
 			// TODO: check if its ok to leave out "Path" since we are mapping it via Name later
-			Name: strV(f.Path),
+			Name: fsname,
 			Mount: &old.Mount{
 				Device:         f.Device,
 				Format:         strV(f.Format),
@@ -235,14 +268,14 @@ func translateFilesystems3to2(fss []new.Filesystem) (ret []old.Filesystem) {
 	return
 }
 
-func translateFilesystemOptions3to2(options []new.FilesystemOption) (ret []old.MountOption) {
+func translateFilesystemOptions3to2(options []types.FilesystemOption) (ret []old.MountOption) {
 	for _, o := range options {
 		ret = append(ret, old.MountOption(o))
 	}
 	return
 }
 
-func translateNode3to2(n new.Node, fss []string) old.Node {
+func translateNode3to2(n types.Node, fss []string) old.Node {
 	fsname := ""
 	path := n.Path
 	for _, fs := range fss {
@@ -252,41 +285,52 @@ func translateNode3to2(n new.Node, fss []string) old.Node {
 		}
 	}
 	if len(fsname) == 0 {
-		// TODO check if this properly implies root
 		fsname = "root"
 	}
-	return old.Node{
+
+	ret := old.Node{
 		Filesystem: fsname,
 		Path:       path,
-		User: &old.NodeUser{
+		Overwrite:  n.Overwrite,
+	}
+	if n.User != (types.NodeUser{}) {
+		ret.User = &old.NodeUser{
 			ID:   n.User.ID,
 			Name: strV(n.User.Name),
-		},
-		Group: &old.NodeGroup{
+		}
+	}
+	if n.Group != (types.NodeGroup{}) {
+		ret.Group = &old.NodeGroup{
 			ID:   n.Group.ID,
 			Name: strV(n.Group.Name),
-		},
-		Overwrite: n.Overwrite,
+		}
 	}
+	return ret
 }
 
-func translateFiles3to2(files []new.File, fss []string) (ret []old.File) {
+func translateFiles3to2(files []types.File, fss []string) (ret []old.File) {
 	for _, f := range files {
+		// Overwrite defaults to true in spec 2 and false in spec 3
+		if f.Node.Overwrite == nil {
+			f.Node.Overwrite = boolPStrict(false)
+		}
 		file := old.File{
 			Node: translateNode3to2(f.Node, fss),
 			FileEmbedded1: old.FileEmbedded1{
 				Mode: f.Mode,
 			},
 		}
-		// TODO check if spec 3 Append and Contents can simultaneously exist
+
 		if f.FileEmbedded1.Contents.Source != nil {
 			file.FileEmbedded1.Contents = old.FileContents{
 				Compression: strV(f.Contents.Compression),
 				Source:      strV(f.Contents.Source),
 			}
+			file.FileEmbedded1.Contents.Verification.Hash = f.FileEmbedded1.Contents.Verification.Hash
 			file.FileEmbedded1.Append = false
 			ret = append(ret, file)
-		} else if f.FileEmbedded1.Append != nil {
+		}
+		if f.FileEmbedded1.Append != nil {
 			for _, fc := range f.FileEmbedded1.Append {
 				appendFile := old.File{
 					Node:          file.Node,
@@ -296,6 +340,7 @@ func translateFiles3to2(files []new.File, fss []string) (ret []old.File) {
 					Compression: strV(fc.Compression),
 					Source:      strV(fc.Source),
 				}
+				appendFile.FileEmbedded1.Contents.Verification.Hash = fc.Verification.Hash
 				appendFile.FileEmbedded1.Append = true
 				ret = append(ret, appendFile)
 			}
@@ -304,7 +349,7 @@ func translateFiles3to2(files []new.File, fss []string) (ret []old.File) {
 	return
 }
 
-func translateLinks3to2(links []new.Link, fss []string) (ret []old.Link) {
+func translateLinks3to2(links []types.Link, fss []string) (ret []old.Link) {
 	for _, l := range links {
 		ret = append(ret, old.Link{
 			Node: translateNode3to2(l.Node, fss),
@@ -317,7 +362,7 @@ func translateLinks3to2(links []new.Link, fss []string) (ret []old.Link) {
 	return
 }
 
-func translateDirectories3to2(dirs []new.Directory, fss []string) (ret []old.Directory) {
+func translateDirectories3to2(dirs []types.Directory, fss []string) (ret []old.Directory) {
 	for _, d := range dirs {
 		ret = append(ret, old.Directory{
 			Node: translateNode3to2(d.Node, fss),
