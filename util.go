@@ -21,6 +21,10 @@ func strP(in string) *string {
 	return &in
 }
 
+func strPStrict(in string) *string {
+	return &in
+}
+
 func boolP(in bool) *bool {
 	if !in {
 		return nil

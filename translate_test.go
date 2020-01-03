@@ -293,6 +293,9 @@ var (
 					},
 					FileEmbedded1: types.FileEmbedded1{
 						Mode: intP(420),
+						Contents: types.FileContents{
+							Source: strPStrict(""),
+						},
 					},
 				},
 			},

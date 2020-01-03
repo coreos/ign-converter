@@ -24,6 +24,7 @@ import (
 	old "github.com/coreos/ignition/config/v2_4_experimental/types"
 	oldValidate "github.com/coreos/ignition/config/validate"
 	"github.com/coreos/ignition/v2/config/v3_0/types"
+	"github.com/coreos/ignition/v2/config/validate"
 )
 
 // Error definitions
@@ -77,7 +78,7 @@ func Check(cfg old.Config, fsMap map[string]string) error {
 		return UsesNetworkdError
 	}
 	if cfg.Ignition.Proxy.HTTPProxy != "" ||
-		cfg.Ignition.Proxy.HTTPSProxy != "" || 
+		cfg.Ignition.Proxy.HTTPSProxy != "" ||
 		len(cfg.Ignition.Proxy.NoProxy) != 0 {
 		return UsesProxyError
 	}
@@ -196,6 +197,10 @@ func Translate(cfg old.Config, fsMap map[string]string) (types.Config, error) {
 			Directories: translateDirectories(cfg.Storage.Directories, fsMap),
 			Links:       translateLinks(cfg.Storage.Links, fsMap),
 		},
+	}
+	r := validate.ValidateWithContext(res, nil)
+	if r.IsFatal() {
+		return types.Config{}, errors.New(r.String())
 	}
 	return res, nil
 }
@@ -416,7 +421,7 @@ func translateFiles(files []old.File, m map[string]string) (ret []types.File) {
 		}
 		c := types.FileContents{
 			Compression: strP(f.Contents.Compression),
-			Source:      strP(f.Contents.Source),
+			Source:      strPStrict(f.Contents.Source),
 		}
 		c.Verification.Hash = f.FileEmbedded1.Contents.Verification.Hash
 
