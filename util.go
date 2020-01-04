@@ -42,3 +42,24 @@ func intP(in int) *int {
 	}
 	return &in
 }
+
+func strV(in *string) string {
+	if in == nil {
+		return ""
+	}
+	return *in
+}
+
+func boolV(in *bool) bool {
+	if in == nil {
+		return false
+	}
+	return *in
+}
+
+func intV(in *int) int {
+	if in == nil {
+		return 0
+	}
+	return *in
+}
