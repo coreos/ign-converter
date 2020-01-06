@@ -34,7 +34,8 @@ import (
 type NoFilesystemError string
 
 func (e NoFilesystemError) Error() string {
-	return fmt.Sprintf("Config defined filesystem %q but no mapping was defined", string(e))
+	return fmt.Sprintf("Config defined filesystem %q but no mapping was defined."+
+		"Please specify a path to be used as the filesystem mountpoint.", string(e))
 }
 
 // DuplicateInodeError is for when files, directories, or links both specify the same path
@@ -44,22 +45,22 @@ type DuplicateInodeError struct {
 }
 
 func (e DuplicateInodeError) Error() string {
-	return fmt.Sprintf("Config has conflicting inodes: %q and %q", e.Old, e.New)
+	return fmt.Sprintf("Config has conflicting inodes: %q and %q.  All files, directories and links must specify a unique `path`.", e.Old, e.New)
 }
 
 // UsesOwnLinkError is for when files, directories, or links use symlinks defined in the config
-// in their own path. This is disallowed in v3+ configs.  type UsesOwnLinkError struct { LinkPath string
+// in their own path. This is disallowed in v3+ configs.
 type UsesOwnLinkError struct {
 	LinkPath string
 	Name     string
 }
 
 func (e UsesOwnLinkError) Error() string {
-	return fmt.Sprintf("%s uses link in config %q", e.Name, e.LinkPath)
+	return fmt.Sprintf("%s uses link defined in config %q. Please use a link not defined in Storage:Links", e.Name, e.LinkPath)
 }
 
-// UsesNetworkdError is the error for inlcuding networkd configs
-var UsesNetworkdError = errors.New("Config includes a networkd section")
+// UsesNetworkdError is the error for including networkd configs
+var UsesNetworkdError = errors.New("config includes deprecated networkd section - use Files instead")
 
 // Check returns if the config is translatable but does not do any translation.
 // fsMap is a map from v2 filesystem names to the paths under which they should
