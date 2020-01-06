@@ -4,14 +4,14 @@ Ignition Spec v1-v2.x.0 to v3.0.0 Config Converter
 ## What is this?
 
 This is a tool and library for convert old (v1-v2.x.0) Ignition configs to the
-new v3.0.0 format.
+new v3.0.0 format.  See [Migrating Configs](https://github.com/coreos/ignition/blob/master/doc/migrating-configs.md) for details on the changes.
 
 ## Why is this not part of Ignition?
 
 The old spec versions have bugs that allow specifying configs that don't make
-sense. For example, it is valid for a v2.1+ config to specify the same path
+sense. For example, it is valid for a v2.1+ config to specify that a path
 should be both a directory and a file. The behavior there is defined by
-Ignition's implementation instead of the spec and in certain edge cases, by the
+Ignition's implementation instead of the spec and, in certain edge cases, by the
 contents of the filesystem Ignition is operating on.
 
 This means Ignition can't be guaranteed to automatically translate an old
@@ -23,7 +23,7 @@ configs require specifying the path relative to the sysroot that Ignition
 should mount the filesystem at), some configs require extra information to
 convert from the old versions to the new versions.
 
-This tool exists to allow _mechcanical_ translation of old configs to new
+This tool exists to allow _mechanical_ translation of old configs to new
 configs. If you are also switching operating systems, other changes may be
 necessary.
 
