@@ -1,10 +1,37 @@
-Ignition Spec v1-v2.x.0 to v3.0.0 Config Converter
+Ignition Spec v1-v2.x.0 <-> v3.0.0 Config Converter
 ===================================================
 
 ## What is this?
 
-This is a tool and library for convert old (v1-v2.x.0) Ignition configs to the
-new v3.0.0 format.  See [Migrating Configs](https://github.com/coreos/ignition/blob/master/doc/migrating-configs.md) for details on the changes.
+This is a tool and library for converting old (spec v1-v2.x.0) Ignition configs
+to the new v3.0.0 format, and from v3.0.0 back to v2.2. See [Migrating Configs](https://github.com/coreos/ignition/blob/master/doc/migrating-configs.md)
+for details on the changes.
+
+## Extra information when translating from v2 -> v3
+
+Ignition Spec 3 will mount filesystems at the mountpoint specified by path
+when running. Filesystems no longer have the name field and files, links,
+and directories no longer specify the filesystem by name. This means to
+translate filesystems (with the exception of root), you must also provide
+a mapping of filesystem name to absolute path, e.g.
+
+`map[string]string{"var": "/var"}`
+
+If you do not, and have a filesystem with the name "var", the translation
+will fail.
+
+Conversely, when you translate from spec 3 down to spec 2, we generate names
+on the fly based on the path. If no path is specified, it is simply named by
+an incrementing integer. This information is not currently being stored,
+which means to translate from 3 -> 2 -> 3, you will have to manually provide
+the filesystem mapping that we generate.
+
+## TODO
+
+ - Save the generated filesystem mapping, so we can translate seamlessly from
+ 3 -> 2 -> 3
+ - Revisit translated spec versions (currently we translate from v2.3 -> v3.0
+ and v3.0 -> v2.2)
 
 ## Why is this not part of Ignition?
 
