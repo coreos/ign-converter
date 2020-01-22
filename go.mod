@@ -1,4 +1,4 @@
-module github.com/coreos/ign2to3
+module github.com/coreos/ign-converter
 
 go 1.12
 
