@@ -1,4 +1,4 @@
-package ign2to3
+package ignconverter
 
 import (
 	"fmt"

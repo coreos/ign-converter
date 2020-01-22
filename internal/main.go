@@ -22,9 +22,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/coreos/ign2to3"
+	ignconverter "github.com/coreos/ign-converter"
 
-	"github.com/coreos/ignition/config/v2_4_experimental"
+	"github.com/coreos/ignition/config/v2_3"
 	"github.com/coreos/ignition/v2/config/v3_0"
 )
 
@@ -47,7 +47,7 @@ func getMapping(fname string) map[string]string {
 	for _, line := range lines {
 		parts := strings.Split(line, " ")
 		if len(parts) != 2 {
-			fail("Error parsing line: %q, needs two parts")
+			fail("Error parsing line: %q, needs two parts", line)
 		}
 		m[parts[0]] = parts[1]
 	}
@@ -100,7 +100,7 @@ func main() {
 			fail("Error parsing spec v3 config: %v\n%v", err, rpt)
 		}
 
-		newCfg, err := ign2to3.Translate3to2(cfg)
+		newCfg, err := ignconverter.Translate3to2(cfg)
 		if err != nil {
 			fail("Failed to translate config from 3 to 2: %v", err)
 		}
@@ -112,14 +112,14 @@ func main() {
 		// translate from 2 to 3
 		mapping := getMapping(fsMap)
 
-		// parse to 2.4.0-experimental
-		cfg, rpt, err := v2_4_experimental.Parse(dataIn)
+		// parse
+		cfg, rpt, err := v2_3.Parse(dataIn)
 		fmt.Fprintf(os.Stderr, "%s", rpt.String())
 		if err != nil || rpt.IsFatal() {
 			fail("Error parsing spec v2 config: %v\n%v", err, rpt)
 		}
 
-		newCfg, err := ign2to3.Translate(cfg, mapping)
+		newCfg, err := ignconverter.Translate(cfg, mapping)
 		if err != nil {
 			fail("Failed to translate config from 2 to 3: %v", err)
 		}
