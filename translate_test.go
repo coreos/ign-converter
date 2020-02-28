@@ -441,6 +441,19 @@ var (
 				{
 					Node: old2_2.Node{
 						Filesystem: "root",
+						Path:       "/etc/motd",
+					},
+					FileEmbedded1: old2_2.FileEmbedded1{
+						Append: true,
+						Mode:   intP(420),
+						Contents: old2_2.FileContents{
+							Source: "data:text/plain;base64,Zm9vCg==",
+						},
+					},
+				},
+				{
+					Node: old2_2.Node{
+						Filesystem: "root",
 						Path:       "/empty",
 						Overwrite:  boolPStrict(false),
 					},
@@ -584,6 +597,20 @@ var (
 								Verification: types.Verification{
 									Hash: &aSha512Hash,
 								},
+							},
+						},
+					},
+				},
+				{
+					Node: types.Node{
+						Path: "/etc/motd",
+						// Test default append with overwrite unset
+					},
+					FileEmbedded1: types.FileEmbedded1{
+						Mode: intP(420),
+						Append: []types.FileContents{
+							{
+								Source: strP("data:text/plain;base64,Zm9vCg=="),
 							},
 						},
 					},
