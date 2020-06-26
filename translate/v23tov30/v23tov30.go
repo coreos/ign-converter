@@ -364,6 +364,13 @@ func translateFiles(files []old.File, m map[string]string) (ret []types.File) {
 		if f.Node.Overwrite == nil {
 			f.Node.Overwrite = util.BoolP(true)
 		}
+
+		// In spec 3, overwrite must be false if append is true
+		// i.e. spec 2 files with append true must be translated to spec 3 files with overwrite false
+		if f.FileEmbedded1.Append == true {
+			f.Node.Overwrite = util.BoolPStrict(false)
+		}
+
 		file := types.File{
 			Node: translateNode(f.Node, m),
 			FileEmbedded1: types.FileEmbedded1{
