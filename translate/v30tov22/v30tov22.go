@@ -334,10 +334,10 @@ func translateFiles(files []types.File, fss []string) (ret []old.File) {
 			},
 		}
 
-		// Overwrite defaults to false in spec 3 and true in spec 2; but
-		// we should omit it if append is specified as we want the "unset"
-		// default.
-		if f.Node.Overwrite == nil && len(f.FileEmbedded1.Append) == 0 {
+		// Overwrite defaults to false in spec 3 and true in spec 2;
+		// we want to retain the "unset" default of spec 3 when translating down,
+		// so we're defaulting to false
+		if f.Node.Overwrite == nil {
 			file.Node.Overwrite = util.BoolPStrict(false)
 		}
 
@@ -362,6 +362,11 @@ func translateFiles(files []types.File, fss []string) (ret []old.File) {
 				}
 				appendFile.FileEmbedded1.Contents.Verification.Hash = fc.Verification.Hash
 				appendFile.FileEmbedded1.Append = true
+				// In spec 3, we may have a file object with overwrite true, contents, and some appends.
+				// When the appended files are split out to separate file objects for spec 2,
+				// the append false object may still have overwrite true,
+				// but the append true objects must have overwrite false in spec 2.
+				appendFile.Node.Overwrite = util.BoolPStrict(false)
 				ret = append(ret, appendFile)
 			}
 		}

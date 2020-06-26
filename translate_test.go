@@ -449,6 +449,7 @@ var (
 					Node: types2_2.Node{
 						Filesystem: "root",
 						Path:       "/etc/motd",
+						Overwrite:  util.BoolPStrict(false),
 					},
 					FileEmbedded1: types2_2.FileEmbedded1{
 						Append: true,
