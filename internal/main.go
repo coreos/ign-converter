@@ -15,13 +15,13 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/clarketm/json"
 	"github.com/coreos/ignition/config/v2_4"
 	"github.com/coreos/ignition/v2/config/shared/errors"
 	"github.com/coreos/ignition/v2/config/v3_0"
