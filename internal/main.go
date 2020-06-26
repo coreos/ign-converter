@@ -22,10 +22,11 @@ import (
 	"os"
 	"strings"
 
-	ignconverter "github.com/coreos/ign-converter"
-
 	"github.com/coreos/ignition/config/v2_3"
 	"github.com/coreos/ignition/v2/config/v3_0"
+
+	"github.com/coreos/ign-converter/translate/v23tov30"
+	"github.com/coreos/ign-converter/translate/v30tov22"
 )
 
 func fail(format string, args ...interface{}) {
@@ -100,7 +101,7 @@ func main() {
 			fail("Error parsing spec v3 config: %v\n%v", err, rpt)
 		}
 
-		newCfg, err := ignconverter.Translate3to2(cfg)
+		newCfg, err := v30tov22.Translate(cfg)
 		if err != nil {
 			fail("Failed to translate config from 3 to 2: %v", err)
 		}
@@ -119,7 +120,7 @@ func main() {
 			fail("Error parsing spec v2 config: %v\n%v", err, rpt)
 		}
 
-		newCfg, err := ignconverter.Translate(cfg, mapping)
+		newCfg, err := v23tov30.Translate(cfg, mapping)
 		if err != nil {
 			fail("Failed to translate config from 2 to 3: %v", err)
 		}
