@@ -28,6 +28,7 @@ import (
 	"github.com/coreos/ign-converter/translate/v23tov30"
 	"github.com/coreos/ign-converter/translate/v24tov31"
 	"github.com/coreos/ign-converter/translate/v30tov22"
+	"github.com/coreos/ign-converter/translate/v31tov22"
 	"github.com/coreos/ign-converter/translate/v31tov24"
 	"github.com/coreos/ign-converter/util"
 )
@@ -1012,6 +1013,169 @@ var (
 			},
 		},
 	}
+
+	downtranslateConfig3_1 = types3_1.Config{
+		Ignition: types3_1.Ignition{
+			Version: "3.1.0",
+			Config: types3_1.IgnitionConfig{
+				Merge: []types3_1.Resource{
+					{
+						Source: util.StrP("https://example.com"),
+						Verification: types3_1.Verification{
+							Hash: &aSha512Hash,
+						},
+					},
+				},
+				Replace: types3_1.Resource{
+					Source: util.StrP("https://example.com"),
+					Verification: types3_1.Verification{
+						Hash: &aSha512Hash,
+					},
+				},
+			},
+			Timeouts: types3_1.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
+			},
+			Security: types3_1.Security{
+				TLS: types3_1.TLS{
+					CertificateAuthorities: []types3_1.Resource{
+						{
+							Source: util.StrP("https://example.com"),
+							Verification: types3_1.Verification{
+								Hash: &aSha512Hash,
+							},
+						},
+					},
+				},
+			},
+			// Proxy is unsupported
+		},
+		Storage: types3_1.Storage{
+			Disks: []types3_1.Disk{
+				{
+					Device:    "/dev/sda",
+					WipeTable: util.BoolP(true),
+					Partitions: []types3_1.Partition{
+						{
+							Label:              util.StrP("var"),
+							Number:             1,
+							TypeGUID:           &aUUID,
+							GUID:               &aUUID,
+							WipePartitionEntry: util.BoolP(true),
+							ShouldExist:        util.BoolP(true),
+						},
+					},
+				},
+			},
+			Raid: []types3_1.Raid{
+				{
+					Name:    "array",
+					Level:   "raid10",
+					Devices: []types3_1.Device{"/dev/sdb", "/dev/sdc"},
+					Spares:  util.IntP(1),
+					Options: []types3_1.RaidOption{"foobar"},
+				},
+			},
+			Filesystems: []types3_1.Filesystem{
+				{
+					Path:           util.StrP("/var"),
+					Device:         "/dev/disk/by-partlabel/var",
+					Format:         util.StrP("xfs"),
+					WipeFilesystem: util.BoolP(true),
+					Label:          util.StrP("var"),
+					UUID:           &aUUID,
+					Options:        []types3_1.FilesystemOption{"rw"},
+				},
+			},
+			Files: []types3_1.File{
+				{
+					Node: types3_1.Node{
+						Path:      "/var/varfile",
+						Overwrite: util.BoolPStrict(false),
+						User: types3_1.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_1.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					FileEmbedded1: types3_1.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_1.Resource{
+							{
+								Compression: util.StrP("gzip"),
+								Source:      util.StrP("https://example.com"),
+								Verification: types3_1.Verification{
+									Hash: &aSha512Hash,
+								},
+							},
+						},
+					},
+				},
+				{
+					Node: types3_1.Node{
+						Path: "/etc/motd",
+						// Test default append with overwrite unset
+					},
+					FileEmbedded1: types3_1.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_1.Resource{
+							{
+								Source: util.StrP("data:text/plain;base64,Zm9vCg=="),
+							},
+						},
+					},
+				},
+				{
+					Node: types3_1.Node{
+						Path: "/empty",
+					},
+					FileEmbedded1: types3_1.FileEmbedded1{
+						Mode: util.IntP(420),
+						Contents: types3_1.Resource{
+							Source: util.StrPStrict(""),
+						},
+					},
+				},
+			},
+			Directories: []types3_1.Directory{
+				{
+					Node: types3_1.Node{
+						Path:      "/rootdir",
+						Overwrite: util.BoolP(true),
+						User: types3_1.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_1.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					DirectoryEmbedded1: types3_1.DirectoryEmbedded1{
+						Mode: util.IntP(420),
+					},
+				},
+			},
+			Links: []types3_1.Link{
+				{
+					Node: types3_1.Node{
+						Path:      "/rootlink",
+						Overwrite: util.BoolP(true),
+						User: types3_1.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_1.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					LinkEmbedded1: types3_1.LinkEmbedded1{
+						Hard:   util.BoolP(false),
+						Target: "/foobar",
+					},
+				},
+			},
+		},
+	}
 )
 
 type input2_3 struct {
@@ -1101,6 +1265,14 @@ func TestTranslate3_0to2_2(t *testing.T) {
 	}
 	assert.Equal(t, exhaustiveConfig2_2, res)
 }
+func TestTranslate3_1to2_2(t *testing.T) {
+	res, err := v31tov22.Translate(downtranslateConfig3_1)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+	assert.Equal(t, exhaustiveConfig2_2, res)
+}
+
 func TestTranslate3_1to2_4(t *testing.T) {
 	res, err := v31tov24.Translate(nonexhaustiveConfig3_1)
 	if err != nil {
