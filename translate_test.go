@@ -1,4 +1,4 @@
-// Copyright 2019 Red Hat, Inc.
+// Copyright 2020 Red Hat, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,51 +17,60 @@ package ignconverter
 import (
 	"testing"
 
-	old2_2 "github.com/coreos/ignition/config/v2_2/types"
-	old "github.com/coreos/ignition/config/v2_3/types"
-	"github.com/coreos/ignition/v2/config/v3_0/types"
+	types2_2 "github.com/coreos/ignition/config/v2_2/types"
+	types2_3 "github.com/coreos/ignition/config/v2_3/types"
+	types2_4 "github.com/coreos/ignition/config/v2_4/types"
+	types3_0 "github.com/coreos/ignition/v2/config/v3_0/types"
+	types3_1 "github.com/coreos/ignition/v2/config/v3_1/types"
+
 	"github.com/stretchr/testify/assert"
+
+	"github.com/coreos/ign-converter/translate/v23tov30"
+	"github.com/coreos/ign-converter/translate/v24tov31"
+	"github.com/coreos/ign-converter/translate/v30tov22"
+	"github.com/coreos/ign-converter/translate/v31tov22"
+	"github.com/coreos/ign-converter/translate/v31tov24"
+	"github.com/coreos/ign-converter/util"
 )
 
-type input struct {
-	cfg   old.Config
-	fsMap map[string]string
-}
-
-// Config using _all_ the (undeprecated) fields
+// Configs using _all_ the (undeprecated) fields
 var (
-	aSha512Hash = "sha512-c6100de5624cfb3c109909948ecb8d703bbddcd3725b8bd43dcf2cee6d2f5dc990a757575e0306a8e8eea354bcd7cfac354da911719766225668fe5430477fa8"
-	aUUID       = "9d6e42cd-dcef-4177-b4c6-2a0c979e3d82"
+	aSha512Hash   = "sha512-c6100de5624cfb3c109909948ecb8d703bbddcd3725b8bd43dcf2cee6d2f5dc990a757575e0306a8e8eea354bcd7cfac354da911719766225668fe5430477fa8"
+	aUUID         = "9d6e42cd-dcef-4177-b4c6-2a0c979e3d82"
+	exhaustiveMap = map[string]string{
+		"var":  "/var",
+		"/var": "/var",
+	}
 
-	exhaustiveConfig = old.Config{
-		Ignition: old.Ignition{
+	exhaustiveConfig2_3 = types2_3.Config{
+		Ignition: types2_3.Ignition{
 			Version: "2.3.0",
-			Config: old.IgnitionConfig{
-				Append: []old.ConfigReference{
+			Config: types2_3.IgnitionConfig{
+				Append: []types2_3.ConfigReference{
 					{
 						Source: "https://example.com",
-						Verification: old.Verification{
+						Verification: types2_3.Verification{
 							Hash: &aSha512Hash,
 						},
 					},
 				},
-				Replace: &old.ConfigReference{
+				Replace: &types2_3.ConfigReference{
 					Source: "https://example.com",
-					Verification: old.Verification{
+					Verification: types2_3.Verification{
 						Hash: &aSha512Hash,
 					},
 				},
 			},
-			Timeouts: old.Timeouts{
-				HTTPResponseHeaders: intP(5),
-				HTTPTotal:           intP(10),
+			Timeouts: types2_3.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
 			},
-			Security: old.Security{
-				TLS: old.TLS{
-					CertificateAuthorities: []old.CaReference{
+			Security: types2_3.Security{
+				TLS: types2_3.TLS{
+					CertificateAuthorities: []types2_3.CaReference{
 						{
 							Source: "https://example.com",
-							Verification: old.Verification{
+							Verification: types2_3.Verification{
 								Hash: &aSha512Hash,
 							},
 						},
@@ -70,114 +79,114 @@ var (
 			},
 			// Proxy is unsupported
 		},
-		Storage: old.Storage{
-			Disks: []old.Disk{
+		Storage: types2_3.Storage{
+			Disks: []types2_3.Disk{
 				{
 					Device:    "/dev/sda",
 					WipeTable: true,
-					Partitions: []old.Partition{
+					Partitions: []types2_3.Partition{
 						{
-							Label:              strP("var"),
+							Label:              util.StrP("var"),
 							Number:             1,
-							SizeMiB:            intP(5000),
-							StartMiB:           intP(2048),
+							SizeMiB:            util.IntP(5000),
+							StartMiB:           util.IntP(2048),
 							TypeGUID:           aUUID,
 							GUID:               aUUID,
 							WipePartitionEntry: true,
-							ShouldExist:        boolP(true),
+							ShouldExist:        util.BoolP(true),
 						},
 					},
 				},
 			},
-			Raid: []old.Raid{
+			Raid: []types2_3.Raid{
 				{
 					Name:    "array",
 					Level:   "raid10",
-					Devices: []old.Device{"/dev/sdb", "/dev/sdc"},
+					Devices: []types2_3.Device{"/dev/sdb", "/dev/sdc"},
 					Spares:  1,
-					Options: []old.RaidOption{"foobar"},
+					Options: []types2_3.RaidOption{"foobar"},
 				},
 			},
-			Filesystems: []old.Filesystem{
+			Filesystems: []types2_3.Filesystem{
 				{
-					Name: "var",
-					Mount: &old.Mount{
+					Name: "/var",
+					Mount: &types2_3.Mount{
 						Device:         "/dev/disk/by-partlabel/var",
 						Format:         "xfs",
 						WipeFilesystem: true,
-						Label:          strP("var"),
+						Label:          util.StrP("var"),
 						UUID:           &aUUID,
-						Options:        []old.MountOption{"rw"},
+						Options:        []types2_3.MountOption{"rw"},
 					},
 				},
 			},
-			Files: []old.File{
+			Files: []types2_3.File{
 				{
-					Node: old.Node{
-						Filesystem: "var",
+					Node: types2_3.Node{
+						Filesystem: "/var",
 						Path:       "/varfile",
-						Overwrite:  boolPStrict(false),
-						User: &old.NodeUser{
-							ID: intP(1000),
+						Overwrite:  util.BoolPStrict(false),
+						User: &types2_3.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: &old.NodeGroup{
+						Group: &types2_3.NodeGroup{
 							Name: "groupname",
 						},
 					},
-					FileEmbedded1: old.FileEmbedded1{
+					FileEmbedded1: types2_3.FileEmbedded1{
 						Append: true,
-						Mode:   intP(420),
-						Contents: old.FileContents{
+						Mode:   util.IntP(420),
+						Contents: types2_3.FileContents{
 							Compression: "gzip",
 							Source:      "https://example.com",
-							Verification: old.Verification{
+							Verification: types2_3.Verification{
 								Hash: &aSha512Hash,
 							},
 						},
 					},
 				},
 				{
-					Node: old.Node{
+					Node: types2_3.Node{
 						Filesystem: "root",
 						Path:       "/empty",
 					},
-					FileEmbedded1: old.FileEmbedded1{
-						Mode: intP(420),
+					FileEmbedded1: types2_3.FileEmbedded1{
+						Mode: util.IntP(420),
 					},
 				},
 			},
-			Directories: []old.Directory{
+			Directories: []types2_3.Directory{
 				{
-					Node: old.Node{
+					Node: types2_3.Node{
 						Filesystem: "root",
 						Path:       "/rootdir",
-						Overwrite:  boolP(true),
-						User: &old.NodeUser{
-							ID: intP(1000),
+						Overwrite:  util.BoolP(true),
+						User: &types2_3.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: &old.NodeGroup{
+						Group: &types2_3.NodeGroup{
 							Name: "groupname",
 						},
 					},
-					DirectoryEmbedded1: old.DirectoryEmbedded1{
-						Mode: intP(420),
+					DirectoryEmbedded1: types2_3.DirectoryEmbedded1{
+						Mode: util.IntP(420),
 					},
 				},
 			},
-			Links: []old.Link{
+			Links: []types2_3.Link{
 				{
-					Node: old.Node{
+					Node: types2_3.Node{
 						Filesystem: "root",
 						Path:       "/rootlink",
-						Overwrite:  boolP(true),
-						User: &old.NodeUser{
-							ID: intP(1000),
+						Overwrite:  util.BoolP(true),
+						User: &types2_3.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: &old.NodeGroup{
+						Group: &types2_3.NodeGroup{
 							Name: "groupname",
 						},
 					},
-					LinkEmbedded1: old.LinkEmbedded1{
+					LinkEmbedded1: types2_3.LinkEmbedded1{
 						Hard:   false,
 						Target: "/foobar",
 					},
@@ -185,152 +194,171 @@ var (
 			},
 		},
 	}
-	exhaustiveMap     = map[string]string{"var": "/var"}
-	exhaustiveConfig3 = types.Config{
-		Ignition: types.Ignition{
-			Version: "3.0.0",
-			Config: types.IgnitionConfig{
-				Merge: []types.ConfigReference{
+
+	exhaustiveConfig2_4 = types2_4.Config{
+		Ignition: types2_4.Ignition{
+			Version: "2.4.0",
+			Config: types2_4.IgnitionConfig{
+				Append: []types2_4.ConfigReference{
 					{
-						Source: strP("https://example.com"),
-						Verification: types.Verification{
+						Source: "https://example.com",
+						Verification: types2_4.Verification{
 							Hash: &aSha512Hash,
 						},
 					},
 				},
-				Replace: types.ConfigReference{
-					Source: strP("https://example.com"),
-					Verification: types.Verification{
+				Replace: &types2_4.ConfigReference{
+					Source: "https://example.com",
+					Verification: types2_4.Verification{
 						Hash: &aSha512Hash,
 					},
 				},
 			},
-			Timeouts: types.Timeouts{
-				HTTPResponseHeaders: intP(5),
-				HTTPTotal:           intP(10),
+			Timeouts: types2_4.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
 			},
-			Security: types.Security{
-				TLS: types.TLS{
-					CertificateAuthorities: []types.CaReference{
+			Security: types2_4.Security{
+				TLS: types2_4.TLS{
+					CertificateAuthorities: []types2_4.CaReference{
 						{
 							Source: "https://example.com",
-							Verification: types.Verification{
+							Verification: types2_4.Verification{
 								Hash: &aSha512Hash,
 							},
 						},
 					},
 				},
 			},
-			// Proxy is unsupported
+			Proxy: types2_4.Proxy{
+				HTTPProxy:  "https://proxy.example.net/",
+				HTTPSProxy: "https://secure.proxy.example.net/",
+				NoProxy: []types2_4.NoProxyItem{
+					"www.example.net",
+					"www.example2.net",
+				},
+			},
 		},
-		Storage: types.Storage{
-			Disks: []types.Disk{
+		Storage: types2_4.Storage{
+			Disks: []types2_4.Disk{
 				{
 					Device:    "/dev/sda",
-					WipeTable: boolP(true),
-					Partitions: []types.Partition{
+					WipeTable: true,
+					Partitions: []types2_4.Partition{
 						{
-							Label:              strP("var"),
+							Label:              util.StrP("var"),
 							Number:             1,
-							SizeMiB:            intP(5000),
-							StartMiB:           intP(2048),
-							TypeGUID:           &aUUID,
-							GUID:               &aUUID,
-							WipePartitionEntry: boolP(true),
-							ShouldExist:        boolP(true),
+							SizeMiB:            util.IntP(5000),
+							StartMiB:           util.IntP(2048),
+							TypeGUID:           aUUID,
+							GUID:               aUUID,
+							WipePartitionEntry: true,
+							ShouldExist:        util.BoolP(true),
 						},
 					},
 				},
 			},
-			Raid: []types.Raid{
+			Raid: []types2_4.Raid{
 				{
 					Name:    "array",
 					Level:   "raid10",
-					Devices: []types.Device{"/dev/sdb", "/dev/sdc"},
-					Spares:  intP(1),
-					Options: []types.RaidOption{"foobar"},
+					Devices: []types2_4.Device{"/dev/sdb", "/dev/sdc"},
+					Spares:  1,
+					Options: []types2_4.RaidOption{"foobar"},
 				},
 			},
-			Filesystems: []types.Filesystem{
+			Filesystems: []types2_4.Filesystem{
 				{
-					Path:           strP("/var"),
-					Device:         "/dev/disk/by-partlabel/var",
-					Format:         strP("xfs"),
-					WipeFilesystem: boolP(true),
-					Label:          strP("var"),
-					UUID:           &aUUID,
-					Options:        []types.FilesystemOption{"rw"},
+					Name: "/var",
+					Mount: &types2_4.Mount{
+						Device:         "/dev/disk/by-partlabel/var",
+						Format:         "xfs",
+						WipeFilesystem: true,
+						Label:          util.StrP("var"),
+						UUID:           &aUUID,
+						Options:        []types2_4.MountOption{"rw"},
+					},
 				},
 			},
-			Files: []types.File{
+			Files: []types2_4.File{
 				{
-					Node: types.Node{
-						Path:      "/var/varfile",
-						Overwrite: boolPStrict(false),
-						User: types.NodeUser{
-							ID: intP(1000),
+					Node: types2_4.Node{
+						Filesystem: "/var",
+						Path:       "/varfile",
+						Overwrite:  util.BoolPStrict(false),
+						User: &types2_4.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: types.NodeGroup{
-							Name: strP("groupname"),
+						Group: &types2_4.NodeGroup{
+							Name: "groupname",
 						},
 					},
-					FileEmbedded1: types.FileEmbedded1{
-						Mode: intP(420),
-						Append: []types.FileContents{
-							{
-								Compression: strP("gzip"),
-								Source:      strP("https://example.com"),
-								Verification: types.Verification{
-									Hash: &aSha512Hash,
+					FileEmbedded1: types2_4.FileEmbedded1{
+						Append: true,
+						Mode:   util.IntP(420),
+						Contents: types2_4.FileContents{
+							Compression: "gzip",
+							Source:      "https://example.com",
+							Verification: types2_4.Verification{
+								Hash: &aSha512Hash,
+							},
+							HTTPHeaders: types2_4.HTTPHeaders{
+								types2_4.HTTPHeader{
+									Name:  "Authorization",
+									Value: "Basic YWxhZGRpbjpvcGVuc2VzYW1l",
+								},
+								types2_4.HTTPHeader{
+									Name:  "User-Agent",
+									Value: "Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)",
 								},
 							},
 						},
 					},
 				},
 				{
-					Node: types.Node{
-						Path:      "/empty",
-						Overwrite: boolPStrict(true),
+					Node: types2_4.Node{
+						Filesystem: "root",
+						Path:       "/empty",
+						Overwrite:  util.BoolPStrict(false),
 					},
-					FileEmbedded1: types.FileEmbedded1{
-						Mode: intP(420),
-						Contents: types.FileContents{
-							Source: strPStrict(""),
-						},
+					FileEmbedded1: types2_4.FileEmbedded1{
+						Mode: util.IntP(420),
 					},
 				},
 			},
-			Directories: []types.Directory{
+			Directories: []types2_4.Directory{
 				{
-					Node: types.Node{
-						Path:      "/rootdir",
-						Overwrite: boolP(true),
-						User: types.NodeUser{
-							ID: intP(1000),
+					Node: types2_4.Node{
+						Filesystem: "root",
+						Path:       "/rootdir",
+						Overwrite:  util.BoolP(true),
+						User: &types2_4.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: types.NodeGroup{
-							Name: strP("groupname"),
+						Group: &types2_4.NodeGroup{
+							Name: "groupname",
 						},
 					},
-					DirectoryEmbedded1: types.DirectoryEmbedded1{
-						Mode: intP(420),
+					DirectoryEmbedded1: types2_4.DirectoryEmbedded1{
+						Mode: util.IntP(420),
 					},
 				},
 			},
-			Links: []types.Link{
+			Links: []types2_4.Link{
 				{
-					Node: types.Node{
-						Path:      "/rootlink",
-						Overwrite: boolP(true),
-						User: types.NodeUser{
-							ID: intP(1000),
+					Node: types2_4.Node{
+						Filesystem: "root",
+						Path:       "/rootlink",
+						Overwrite:  util.BoolP(true),
+						User: &types2_4.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: types.NodeGroup{
-							Name: strP("groupname"),
+						Group: &types2_4.NodeGroup{
+							Name: "groupname",
 						},
 					},
-					LinkEmbedded1: types.LinkEmbedded1{
-						Hard:   boolP(false),
+					LinkEmbedded1: types2_4.LinkEmbedded1{
+						Hard:   false,
 						Target: "/foobar",
 					},
 				},
@@ -338,36 +366,35 @@ var (
 		},
 	}
 
-	// Variables with slight modifications for downtranslation
-	exhaustiveConfigDowntranslate = old2_2.Config{
-		Ignition: old2_2.Ignition{
-			Version: "2.2.0",
-			Config: old2_2.IgnitionConfig{
-				Append: []old2_2.ConfigReference{
+	exhaustiveConfig3_0 = types3_0.Config{
+		Ignition: types3_0.Ignition{
+			Version: "3.0.0",
+			Config: types3_0.IgnitionConfig{
+				Merge: []types3_0.ConfigReference{
 					{
-						Source: "https://example.com",
-						Verification: old2_2.Verification{
+						Source: util.StrP("https://example.com"),
+						Verification: types3_0.Verification{
 							Hash: &aSha512Hash,
 						},
 					},
 				},
-				Replace: &old2_2.ConfigReference{
-					Source: "https://example.com",
-					Verification: old2_2.Verification{
+				Replace: types3_0.ConfigReference{
+					Source: util.StrP("https://example.com"),
+					Verification: types3_0.Verification{
 						Hash: &aSha512Hash,
 					},
 				},
 			},
-			Timeouts: old2_2.Timeouts{
-				HTTPResponseHeaders: intP(5),
-				HTTPTotal:           intP(10),
+			Timeouts: types3_0.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
 			},
-			Security: old2_2.Security{
-				TLS: old2_2.TLS{
-					CertificateAuthorities: []old2_2.CaReference{
+			Security: types3_0.Security{
+				TLS: types3_0.TLS{
+					CertificateAuthorities: []types3_0.CaReference{
 						{
 							Source: "https://example.com",
-							Verification: old2_2.Verification{
+							Verification: types3_0.Verification{
 								Hash: &aSha512Hash,
 							},
 						},
@@ -376,12 +403,164 @@ var (
 			},
 			// Proxy is unsupported
 		},
-		Storage: old2_2.Storage{
-			Disks: []old2_2.Disk{
+		Storage: types3_0.Storage{
+			Disks: []types3_0.Disk{
+				{
+					Device:    "/dev/sda",
+					WipeTable: util.BoolP(true),
+					Partitions: []types3_0.Partition{
+						{
+							Label:              util.StrP("var"),
+							Number:             1,
+							SizeMiB:            util.IntP(5000),
+							StartMiB:           util.IntP(2048),
+							TypeGUID:           &aUUID,
+							GUID:               &aUUID,
+							WipePartitionEntry: util.BoolP(true),
+							ShouldExist:        util.BoolP(true),
+						},
+					},
+				},
+			},
+			Raid: []types3_0.Raid{
+				{
+					Name:    "array",
+					Level:   "raid10",
+					Devices: []types3_0.Device{"/dev/sdb", "/dev/sdc"},
+					Spares:  util.IntP(1),
+					Options: []types3_0.RaidOption{"foobar"},
+				},
+			},
+			Filesystems: []types3_0.Filesystem{
+				{
+					Path:           util.StrP("/var"),
+					Device:         "/dev/disk/by-partlabel/var",
+					Format:         util.StrP("xfs"),
+					WipeFilesystem: util.BoolP(true),
+					Label:          util.StrP("var"),
+					UUID:           &aUUID,
+					Options:        []types3_0.FilesystemOption{"rw"},
+				},
+			},
+			Files: []types3_0.File{
+				{
+					Node: types3_0.Node{
+						Path:      "/var/varfile",
+						Overwrite: util.BoolPStrict(false),
+						User: types3_0.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_0.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					FileEmbedded1: types3_0.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_0.FileContents{
+							{
+								Compression: util.StrP("gzip"),
+								Source:      util.StrP("https://example.com"),
+								Verification: types3_0.Verification{
+									Hash: &aSha512Hash,
+								},
+							},
+						},
+					},
+				},
+				{
+					Node: types3_0.Node{
+						Path:      "/empty",
+						Overwrite: util.BoolPStrict(true),
+					},
+					FileEmbedded1: types3_0.FileEmbedded1{
+						Mode: util.IntP(420),
+						Contents: types3_0.FileContents{
+							Source: util.StrPStrict(""),
+						},
+					},
+				},
+			},
+			Directories: []types3_0.Directory{
+				{
+					Node: types3_0.Node{
+						Path:      "/rootdir",
+						Overwrite: util.BoolP(true),
+						User: types3_0.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_0.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					DirectoryEmbedded1: types3_0.DirectoryEmbedded1{
+						Mode: util.IntP(420),
+					},
+				},
+			},
+			Links: []types3_0.Link{
+				{
+					Node: types3_0.Node{
+						Path:      "/rootlink",
+						Overwrite: util.BoolP(true),
+						User: types3_0.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_0.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					LinkEmbedded1: types3_0.LinkEmbedded1{
+						Hard:   util.BoolP(false),
+						Target: "/foobar",
+					},
+				},
+			},
+		},
+	}
+
+	exhaustiveConfig2_2 = types2_2.Config{
+		Ignition: types2_2.Ignition{
+			Version: "2.2.0",
+			Config: types2_2.IgnitionConfig{
+				Append: []types2_2.ConfigReference{
+					{
+						Source: "https://example.com",
+						Verification: types2_2.Verification{
+							Hash: &aSha512Hash,
+						},
+					},
+				},
+				Replace: &types2_2.ConfigReference{
+					Source: "https://example.com",
+					Verification: types2_2.Verification{
+						Hash: &aSha512Hash,
+					},
+				},
+			},
+			Timeouts: types2_2.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
+			},
+			Security: types2_2.Security{
+				TLS: types2_2.TLS{
+					CertificateAuthorities: []types2_2.CaReference{
+						{
+							Source: "https://example.com",
+							Verification: types2_2.Verification{
+								Hash: &aSha512Hash,
+							},
+						},
+					},
+				},
+			},
+			// Proxy is unsupported
+		},
+		Storage: types2_2.Storage{
+			Disks: []types2_2.Disk{
 				{
 					Device:    "/dev/sda",
 					WipeTable: true,
-					Partitions: []old2_2.Partition{
+					Partitions: []types2_2.Partition{
 						{
 							Label:    "var",
 							Number:   1,
@@ -391,109 +570,110 @@ var (
 					},
 				},
 			},
-			Raid: []old2_2.Raid{
+			Raid: []types2_2.Raid{
 				{
 					Name:    "array",
 					Level:   "raid10",
-					Devices: []old2_2.Device{"/dev/sdb", "/dev/sdc"},
+					Devices: []types2_2.Device{"/dev/sdb", "/dev/sdc"},
 					Spares:  1,
-					Options: []old2_2.RaidOption{"foobar"},
+					Options: []types2_2.RaidOption{"foobar"},
 				},
 			},
-			Filesystems: []old2_2.Filesystem{
+			Filesystems: []types2_2.Filesystem{
 				{
 					Name: "/var",
-					Mount: &old2_2.Mount{
+					Mount: &types2_2.Mount{
 						Device:         "/dev/disk/by-partlabel/var",
 						Format:         "xfs",
 						WipeFilesystem: true,
-						Label:          strP("var"),
+						Label:          util.StrP("var"),
 						UUID:           &aUUID,
-						Options:        []old2_2.MountOption{"rw"},
+						Options:        []types2_2.MountOption{"rw"},
 					},
 				},
 			},
-			Files: []old2_2.File{
+			Files: []types2_2.File{
 				{
-					Node: old2_2.Node{
+					Node: types2_2.Node{
 						Filesystem: "/var",
 						Path:       "/varfile",
-						Overwrite:  boolPStrict(false),
-						User: &old2_2.NodeUser{
-							ID: intP(1000),
+						Overwrite:  util.BoolPStrict(false),
+						User: &types2_2.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: &old2_2.NodeGroup{
+						Group: &types2_2.NodeGroup{
 							Name: "groupname",
 						},
 					},
-					FileEmbedded1: old2_2.FileEmbedded1{
+					FileEmbedded1: types2_2.FileEmbedded1{
 						Append: true,
-						Mode:   intP(420),
-						Contents: old2_2.FileContents{
+						Mode:   util.IntP(420),
+						Contents: types2_2.FileContents{
 							Compression: "gzip",
 							Source:      "https://example.com",
-							Verification: old2_2.Verification{
+							Verification: types2_2.Verification{
 								Hash: &aSha512Hash,
 							},
 						},
 					},
 				},
 				{
-					Node: old2_2.Node{
+					Node: types2_2.Node{
 						Filesystem: "root",
 						Path:       "/etc/motd",
+						Overwrite:  util.BoolPStrict(false),
 					},
-					FileEmbedded1: old2_2.FileEmbedded1{
+					FileEmbedded1: types2_2.FileEmbedded1{
 						Append: true,
-						Mode:   intP(420),
-						Contents: old2_2.FileContents{
+						Mode:   util.IntP(420),
+						Contents: types2_2.FileContents{
 							Source: "data:text/plain;base64,Zm9vCg==",
 						},
 					},
 				},
 				{
-					Node: old2_2.Node{
+					Node: types2_2.Node{
 						Filesystem: "root",
 						Path:       "/empty",
-						Overwrite:  boolPStrict(false),
+						Overwrite:  util.BoolPStrict(false),
 					},
-					FileEmbedded1: old2_2.FileEmbedded1{
-						Mode: intP(420),
+					FileEmbedded1: types2_2.FileEmbedded1{
+						Mode: util.IntP(420),
 					},
 				},
 			},
-			Directories: []old2_2.Directory{
+			Directories: []types2_2.Directory{
 				{
-					Node: old2_2.Node{
+					Node: types2_2.Node{
 						Filesystem: "root",
 						Path:       "/rootdir",
-						Overwrite:  boolP(true),
-						User: &old2_2.NodeUser{
-							ID: intP(1000),
+						Overwrite:  util.BoolP(true),
+						User: &types2_2.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: &old2_2.NodeGroup{
+						Group: &types2_2.NodeGroup{
 							Name: "groupname",
 						},
 					},
-					DirectoryEmbedded1: old2_2.DirectoryEmbedded1{
-						Mode: intP(420),
+					DirectoryEmbedded1: types2_2.DirectoryEmbedded1{
+						Mode: util.IntP(420),
 					},
 				},
 			},
-			Links: []old2_2.Link{
+			Links: []types2_2.Link{
 				{
-					Node: old2_2.Node{
+					Node: types2_2.Node{
 						Filesystem: "root",
 						Path:       "/rootlink",
-						Overwrite:  boolP(true),
-						User: &old2_2.NodeUser{
-							ID: intP(1000),
+						Overwrite:  util.BoolP(true),
+						User: &types2_2.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: &old2_2.NodeGroup{
+						Group: &types2_2.NodeGroup{
 							Name: "groupname",
 						},
 					},
-					LinkEmbedded1: old2_2.LinkEmbedded1{
+					LinkEmbedded1: types2_2.LinkEmbedded1{
 						Hard:   false,
 						Target: "/foobar",
 					},
@@ -502,35 +682,35 @@ var (
 		},
 	}
 
-	exhaustiveConfig3Downtranslate = types.Config{
-		Ignition: types.Ignition{
+	downtranslateConfig3_0 = types3_0.Config{
+		Ignition: types3_0.Ignition{
 			Version: "3.0.0",
-			Config: types.IgnitionConfig{
-				Merge: []types.ConfigReference{
+			Config: types3_0.IgnitionConfig{
+				Merge: []types3_0.ConfigReference{
 					{
-						Source: strP("https://example.com"),
-						Verification: types.Verification{
+						Source: util.StrP("https://example.com"),
+						Verification: types3_0.Verification{
 							Hash: &aSha512Hash,
 						},
 					},
 				},
-				Replace: types.ConfigReference{
-					Source: strP("https://example.com"),
-					Verification: types.Verification{
+				Replace: types3_0.ConfigReference{
+					Source: util.StrP("https://example.com"),
+					Verification: types3_0.Verification{
 						Hash: &aSha512Hash,
 					},
 				},
 			},
-			Timeouts: types.Timeouts{
-				HTTPResponseHeaders: intP(5),
-				HTTPTotal:           intP(10),
+			Timeouts: types3_0.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
 			},
-			Security: types.Security{
-				TLS: types.TLS{
-					CertificateAuthorities: []types.CaReference{
+			Security: types3_0.Security{
+				TLS: types3_0.TLS{
+					CertificateAuthorities: []types3_0.CaReference{
 						{
 							Source: "https://example.com",
-							Verification: types.Verification{
+							Verification: types3_0.Verification{
 								Hash: &aSha512Hash,
 							},
 						},
@@ -539,62 +719,62 @@ var (
 			},
 			// Proxy is unsupported
 		},
-		Storage: types.Storage{
-			Disks: []types.Disk{
+		Storage: types3_0.Storage{
+			Disks: []types3_0.Disk{
 				{
 					Device:    "/dev/sda",
-					WipeTable: boolP(true),
-					Partitions: []types.Partition{
+					WipeTable: util.BoolP(true),
+					Partitions: []types3_0.Partition{
 						{
-							Label:              strP("var"),
+							Label:              util.StrP("var"),
 							Number:             1,
 							TypeGUID:           &aUUID,
 							GUID:               &aUUID,
-							WipePartitionEntry: boolP(true),
-							ShouldExist:        boolP(true),
+							WipePartitionEntry: util.BoolP(true),
+							ShouldExist:        util.BoolP(true),
 						},
 					},
 				},
 			},
-			Raid: []types.Raid{
+			Raid: []types3_0.Raid{
 				{
 					Name:    "array",
 					Level:   "raid10",
-					Devices: []types.Device{"/dev/sdb", "/dev/sdc"},
-					Spares:  intP(1),
-					Options: []types.RaidOption{"foobar"},
+					Devices: []types3_0.Device{"/dev/sdb", "/dev/sdc"},
+					Spares:  util.IntP(1),
+					Options: []types3_0.RaidOption{"foobar"},
 				},
 			},
-			Filesystems: []types.Filesystem{
+			Filesystems: []types3_0.Filesystem{
 				{
-					Path:           strP("/var"),
+					Path:           util.StrP("/var"),
 					Device:         "/dev/disk/by-partlabel/var",
-					Format:         strP("xfs"),
-					WipeFilesystem: boolP(true),
-					Label:          strP("var"),
+					Format:         util.StrP("xfs"),
+					WipeFilesystem: util.BoolP(true),
+					Label:          util.StrP("var"),
 					UUID:           &aUUID,
-					Options:        []types.FilesystemOption{"rw"},
+					Options:        []types3_0.FilesystemOption{"rw"},
 				},
 			},
-			Files: []types.File{
+			Files: []types3_0.File{
 				{
-					Node: types.Node{
+					Node: types3_0.Node{
 						Path:      "/var/varfile",
-						Overwrite: boolPStrict(false),
-						User: types.NodeUser{
-							ID: intP(1000),
+						Overwrite: util.BoolPStrict(false),
+						User: types3_0.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: types.NodeGroup{
-							Name: strP("groupname"),
+						Group: types3_0.NodeGroup{
+							Name: util.StrP("groupname"),
 						},
 					},
-					FileEmbedded1: types.FileEmbedded1{
-						Mode: intP(420),
-						Append: []types.FileContents{
+					FileEmbedded1: types3_0.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_0.FileContents{
 							{
-								Compression: strP("gzip"),
-								Source:      strP("https://example.com"),
-								Verification: types.Verification{
+								Compression: util.StrP("gzip"),
+								Source:      util.StrP("https://example.com"),
+								Verification: types3_0.Verification{
 									Hash: &aSha512Hash,
 								},
 							},
@@ -602,62 +782,394 @@ var (
 					},
 				},
 				{
-					Node: types.Node{
+					Node: types3_0.Node{
 						Path: "/etc/motd",
 						// Test default append with overwrite unset
 					},
-					FileEmbedded1: types.FileEmbedded1{
-						Mode: intP(420),
-						Append: []types.FileContents{
+					FileEmbedded1: types3_0.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_0.FileContents{
 							{
-								Source: strP("data:text/plain;base64,Zm9vCg=="),
+								Source: util.StrP("data:text/plain;base64,Zm9vCg=="),
 							},
 						},
 					},
 				},
 				{
-					Node: types.Node{
+					Node: types3_0.Node{
 						Path: "/empty",
 					},
-					FileEmbedded1: types.FileEmbedded1{
-						Mode: intP(420),
-						Contents: types.FileContents{
-							Source: strPStrict(""),
+					FileEmbedded1: types3_0.FileEmbedded1{
+						Mode: util.IntP(420),
+						Contents: types3_0.FileContents{
+							Source: util.StrPStrict(""),
 						},
 					},
 				},
 			},
-			Directories: []types.Directory{
+			Directories: []types3_0.Directory{
 				{
-					Node: types.Node{
+					Node: types3_0.Node{
 						Path:      "/rootdir",
-						Overwrite: boolP(true),
-						User: types.NodeUser{
-							ID: intP(1000),
+						Overwrite: util.BoolP(true),
+						User: types3_0.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: types.NodeGroup{
-							Name: strP("groupname"),
+						Group: types3_0.NodeGroup{
+							Name: util.StrP("groupname"),
 						},
 					},
-					DirectoryEmbedded1: types.DirectoryEmbedded1{
-						Mode: intP(420),
+					DirectoryEmbedded1: types3_0.DirectoryEmbedded1{
+						Mode: util.IntP(420),
 					},
 				},
 			},
-			Links: []types.Link{
+			Links: []types3_0.Link{
 				{
-					Node: types.Node{
+					Node: types3_0.Node{
 						Path:      "/rootlink",
-						Overwrite: boolP(true),
-						User: types.NodeUser{
-							ID: intP(1000),
+						Overwrite: util.BoolP(true),
+						User: types3_0.NodeUser{
+							ID: util.IntP(1000),
 						},
-						Group: types.NodeGroup{
-							Name: strP("groupname"),
+						Group: types3_0.NodeGroup{
+							Name: util.StrP("groupname"),
 						},
 					},
-					LinkEmbedded1: types.LinkEmbedded1{
-						Hard:   boolP(false),
+					LinkEmbedded1: types3_0.LinkEmbedded1{
+						Hard:   util.BoolP(false),
+						Target: "/foobar",
+					},
+				},
+			},
+		},
+	}
+
+	nonexhaustiveConfig3_1 = types3_1.Config{
+		Ignition: types3_1.Ignition{
+			Version: "3.1.0",
+			Config: types3_1.IgnitionConfig{
+				Merge: []types3_1.Resource{
+					{
+						Source: util.StrP("https://example.com"),
+						Verification: types3_1.Verification{
+							Hash: &aSha512Hash,
+						},
+					},
+				},
+				Replace: types3_1.Resource{
+					Source: util.StrP("https://example.com"),
+					Verification: types3_1.Verification{
+						Hash: &aSha512Hash,
+					},
+				},
+			},
+			Timeouts: types3_1.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
+			},
+			Security: types3_1.Security{
+				TLS: types3_1.TLS{
+					CertificateAuthorities: []types3_1.Resource{
+						{
+							Source: util.StrP("https://example.com"),
+							Verification: types3_1.Verification{
+								Hash: &aSha512Hash,
+							},
+						},
+					},
+				},
+			},
+			Proxy: types3_1.Proxy{
+				HTTPProxy:  util.StrP("https://proxy.example.net/"),
+				HTTPSProxy: util.StrP("https://secure.proxy.example.net/"),
+				NoProxy: []types3_1.NoProxyItem{
+					"www.example.net",
+					"www.example2.net",
+				},
+			},
+		},
+		Storage: types3_1.Storage{
+			Disks: []types3_1.Disk{
+				{
+					Device:    "/dev/sda",
+					WipeTable: util.BoolP(true),
+					Partitions: []types3_1.Partition{
+						{
+							Label:              util.StrP("var"),
+							Number:             1,
+							SizeMiB:            util.IntP(5000),
+							StartMiB:           util.IntP(2048),
+							TypeGUID:           &aUUID,
+							GUID:               &aUUID,
+							WipePartitionEntry: util.BoolP(true),
+							ShouldExist:        util.BoolP(true),
+						},
+					},
+				},
+			},
+			Raid: []types3_1.Raid{
+				{
+					Name:    "array",
+					Level:   "raid10",
+					Devices: []types3_1.Device{"/dev/sdb", "/dev/sdc"},
+					Spares:  util.IntP(1),
+					Options: []types3_1.RaidOption{"foobar"},
+				},
+			},
+			Filesystems: []types3_1.Filesystem{
+				{
+					Path:           util.StrP("/var"),
+					Device:         "/dev/disk/by-partlabel/var",
+					Format:         util.StrP("xfs"),
+					WipeFilesystem: util.BoolP(true),
+					Label:          util.StrP("var"),
+					UUID:           &aUUID,
+					Options:        []types3_1.FilesystemOption{"rw"},
+				},
+			},
+			Files: []types3_1.File{
+				{
+					Node: types3_1.Node{
+						Path:      "/var/varfile",
+						Overwrite: util.BoolPStrict(false),
+						User: types3_1.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_1.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					FileEmbedded1: types3_1.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_1.Resource{
+							{
+								Compression: util.StrP("gzip"),
+								Source:      util.StrP("https://example.com"),
+								Verification: types3_1.Verification{
+									Hash: &aSha512Hash,
+								},
+								HTTPHeaders: types3_1.HTTPHeaders{
+									types3_1.HTTPHeader{
+										Name:  "Authorization",
+										Value: util.StrP("Basic YWxhZGRpbjpvcGVuc2VzYW1l"),
+									},
+									types3_1.HTTPHeader{
+										Name:  "User-Agent",
+										Value: util.StrP("Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)"),
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Node: types3_1.Node{
+						Path:      "/empty",
+						Overwrite: util.BoolPStrict(false),
+					},
+					FileEmbedded1: types3_1.FileEmbedded1{
+						Mode: util.IntP(420),
+						Contents: types3_1.Resource{
+							Source: util.StrPStrict(""),
+						},
+					},
+				},
+			},
+			Directories: []types3_1.Directory{
+				{
+					Node: types3_1.Node{
+						Path:      "/rootdir",
+						Overwrite: util.BoolP(true),
+						User: types3_1.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_1.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					DirectoryEmbedded1: types3_1.DirectoryEmbedded1{
+						Mode: util.IntP(420),
+					},
+				},
+			},
+			Links: []types3_1.Link{
+				{
+					Node: types3_1.Node{
+						Path:      "/rootlink",
+						Overwrite: util.BoolP(true),
+						User: types3_1.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_1.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					LinkEmbedded1: types3_1.LinkEmbedded1{
+						Hard:   util.BoolP(false),
+						Target: "/foobar",
+					},
+				},
+			},
+		},
+	}
+
+	downtranslateConfig3_1 = types3_1.Config{
+		Ignition: types3_1.Ignition{
+			Version: "3.1.0",
+			Config: types3_1.IgnitionConfig{
+				Merge: []types3_1.Resource{
+					{
+						Source: util.StrP("https://example.com"),
+						Verification: types3_1.Verification{
+							Hash: &aSha512Hash,
+						},
+					},
+				},
+				Replace: types3_1.Resource{
+					Source: util.StrP("https://example.com"),
+					Verification: types3_1.Verification{
+						Hash: &aSha512Hash,
+					},
+				},
+			},
+			Timeouts: types3_1.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
+			},
+			Security: types3_1.Security{
+				TLS: types3_1.TLS{
+					CertificateAuthorities: []types3_1.Resource{
+						{
+							Source: util.StrP("https://example.com"),
+							Verification: types3_1.Verification{
+								Hash: &aSha512Hash,
+							},
+						},
+					},
+				},
+			},
+			// Proxy is unsupported
+		},
+		Storage: types3_1.Storage{
+			Disks: []types3_1.Disk{
+				{
+					Device:    "/dev/sda",
+					WipeTable: util.BoolP(true),
+					Partitions: []types3_1.Partition{
+						{
+							Label:              util.StrP("var"),
+							Number:             1,
+							TypeGUID:           &aUUID,
+							GUID:               &aUUID,
+							WipePartitionEntry: util.BoolP(true),
+							ShouldExist:        util.BoolP(true),
+						},
+					},
+				},
+			},
+			Raid: []types3_1.Raid{
+				{
+					Name:    "array",
+					Level:   "raid10",
+					Devices: []types3_1.Device{"/dev/sdb", "/dev/sdc"},
+					Spares:  util.IntP(1),
+					Options: []types3_1.RaidOption{"foobar"},
+				},
+			},
+			Filesystems: []types3_1.Filesystem{
+				{
+					Path:           util.StrP("/var"),
+					Device:         "/dev/disk/by-partlabel/var",
+					Format:         util.StrP("xfs"),
+					WipeFilesystem: util.BoolP(true),
+					Label:          util.StrP("var"),
+					UUID:           &aUUID,
+					Options:        []types3_1.FilesystemOption{"rw"},
+				},
+			},
+			Files: []types3_1.File{
+				{
+					Node: types3_1.Node{
+						Path:      "/var/varfile",
+						Overwrite: util.BoolPStrict(false),
+						User: types3_1.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_1.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					FileEmbedded1: types3_1.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_1.Resource{
+							{
+								Compression: util.StrP("gzip"),
+								Source:      util.StrP("https://example.com"),
+								Verification: types3_1.Verification{
+									Hash: &aSha512Hash,
+								},
+							},
+						},
+					},
+				},
+				{
+					Node: types3_1.Node{
+						Path: "/etc/motd",
+						// Test default append with overwrite unset
+					},
+					FileEmbedded1: types3_1.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_1.Resource{
+							{
+								Source: util.StrP("data:text/plain;base64,Zm9vCg=="),
+							},
+						},
+					},
+				},
+				{
+					Node: types3_1.Node{
+						Path: "/empty",
+					},
+					FileEmbedded1: types3_1.FileEmbedded1{
+						Mode: util.IntP(420),
+						Contents: types3_1.Resource{
+							Source: util.StrPStrict(""),
+						},
+					},
+				},
+			},
+			Directories: []types3_1.Directory{
+				{
+					Node: types3_1.Node{
+						Path:      "/rootdir",
+						Overwrite: util.BoolP(true),
+						User: types3_1.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_1.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					DirectoryEmbedded1: types3_1.DirectoryEmbedded1{
+						Mode: util.IntP(420),
+					},
+				},
+			},
+			Links: []types3_1.Link{
+				{
+					Node: types3_1.Node{
+						Path:      "/rootlink",
+						Overwrite: util.BoolP(true),
+						User: types3_1.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_1.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					LinkEmbedded1: types3_1.LinkEmbedded1{
+						Hard:   util.BoolP(false),
 						Target: "/foobar",
 					},
 				},
@@ -666,45 +1178,105 @@ var (
 	}
 )
 
-func TestCheck(t *testing.T) {
-	goodConfigs := []input{
+type input2_3 struct {
+	cfg   types2_3.Config
+	fsMap map[string]string
+}
+
+func TestCheck2_3(t *testing.T) {
+	goodConfigs := []input2_3{
 		{
-			exhaustiveConfig,
+			exhaustiveConfig2_3,
 			exhaustiveMap,
 		},
 	}
-	badConfigs := []input{
+	badConfigs := []input2_3{
 		{}, // empty config has no version, fails validation
 		{
 			// need a map for filesystems
-			exhaustiveConfig,
+			exhaustiveConfig2_3,
 			nil,
 		},
 	}
 	for i, e := range goodConfigs {
-		if err := Check(e.cfg, e.fsMap); err != nil {
+		if err := v23tov30.Check2_3(e.cfg, e.fsMap); err != nil {
 			t.Errorf("Good config test %d: got %v, expected nil", i, err)
 		}
 	}
 	for i, e := range badConfigs {
-		if err := Check(e.cfg, e.fsMap); err == nil {
+		if err := v23tov30.Check2_3(e.cfg, e.fsMap); err == nil {
 			t.Errorf("Bad config test %d: got ok, expected: %v", i, err)
 		}
 	}
 }
 
-func Test2To3(t *testing.T) {
-	res, err := Translate(exhaustiveConfig, exhaustiveMap)
-	if err != nil {
-		t.Fatalf("Failed translation: %v", err)
-	}
-	assert.Equal(t, exhaustiveConfig3, res, "Configs Differed")
+type input2_4 struct {
+	cfg   types2_4.Config
+	fsMap map[string]string
 }
 
-func Test3To2(t *testing.T) {
-	res, err := Translate3to2(exhaustiveConfig3Downtranslate)
+func TestCheck2_4(t *testing.T) {
+	goodConfigs := []input2_4{
+		{
+			exhaustiveConfig2_4,
+			exhaustiveMap,
+		},
+	}
+	badConfigs := []input2_4{
+		{}, // empty config has no version, fails validation
+		{
+			// need a map for filesystems
+			exhaustiveConfig2_4,
+			nil,
+		},
+	}
+	for i, e := range goodConfigs {
+		if err := v24tov31.Check2_4(e.cfg, e.fsMap); err != nil {
+			t.Errorf("Good config test %d: got %v, expected nil", i, err)
+		}
+	}
+	for i, e := range badConfigs {
+		if err := v24tov31.Check2_4(e.cfg, e.fsMap); err == nil {
+			t.Errorf("Bad config test %d: got ok, expected: %v", i, err)
+		}
+	}
+}
+
+func TestTranslate2_3to3_0(t *testing.T) {
+	res, err := v23tov30.Translate(exhaustiveConfig2_3, exhaustiveMap)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
-	assert.Equal(t, exhaustiveConfigDowntranslate, res, "Configs Differed")
+	assert.Equal(t, exhaustiveConfig3_0, res)
+}
+
+func TestTranslate2_4to3_1(t *testing.T) {
+	res, err := v24tov31.Translate(exhaustiveConfig2_4, exhaustiveMap)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+	assert.Equal(t, nonexhaustiveConfig3_1, res)
+}
+
+func TestTranslate3_0to2_2(t *testing.T) {
+	res, err := v30tov22.Translate(downtranslateConfig3_0)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+	assert.Equal(t, exhaustiveConfig2_2, res)
+}
+func TestTranslate3_1to2_2(t *testing.T) {
+	res, err := v31tov22.Translate(downtranslateConfig3_1)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+	assert.Equal(t, exhaustiveConfig2_2, res)
+}
+
+func TestTranslate3_1to2_4(t *testing.T) {
+	res, err := v31tov24.Translate(nonexhaustiveConfig3_1)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+	assert.Equal(t, exhaustiveConfig2_4, res)
 }

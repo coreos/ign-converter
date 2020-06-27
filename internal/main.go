@@ -1,4 +1,4 @@
-// Copyright 2019 Red Hat, Inc
+// Copyright 2020 Red Hat, Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,10 +22,14 @@ import (
 	"os"
 	"strings"
 
-	ignconverter "github.com/coreos/ign-converter"
-
-	"github.com/coreos/ignition/config/v2_3"
+	"github.com/coreos/ignition/config/v2_4"
+	"github.com/coreos/ignition/v2/config/shared/errors"
 	"github.com/coreos/ignition/v2/config/v3_0"
+	"github.com/coreos/ignition/v2/config/v3_1"
+	translateTo3_1 "github.com/coreos/ignition/v2/config/v3_1/translate"
+
+	"github.com/coreos/ign-converter/translate/v24tov31"
+	"github.com/coreos/ign-converter/translate/v31tov24"
 )
 
 func fail(format string, args ...interface{}) {
@@ -93,14 +97,23 @@ func main() {
 
 	var dataOut []byte
 	if downtranslate {
-		// translate from 3 to 2
-		cfg, rpt, err := v3_0.Parse(dataIn)
+		// translate from 3.x to 2.4
+		cfg, rpt, err := v3_1.Parse(dataIn)
 		fmt.Fprintf(os.Stderr, "%s", rpt.String())
-		if err != nil || rpt.IsFatal() {
-			fail("Error parsing spec v3 config: %v\n%v", err, rpt)
+		if err == errors.ErrUnknownVersion {
+			// We can fail unmarshaling if it's an older config. Attempt to parse
+			// it as such.
+			cfg3_0, rpt, err := v3_0.Parse(dataIn)
+			fmt.Fprintf(os.Stderr, "%s", rpt.String())
+			if err != nil || rpt.IsFatal() {
+				fail("Error parsing spec v3.0 config: %v\n%v", err, rpt)
+			}
+			cfg = translateTo3_1.Translate(cfg3_0)
+		} else if err != nil || rpt.IsFatal() {
+			fail("Error parsing spec v3.1 config: %v\n%v", err, rpt)
 		}
 
-		newCfg, err := ignconverter.Translate3to2(cfg)
+		newCfg, err := v31tov24.Translate(cfg)
 		if err != nil {
 			fail("Failed to translate config from 3 to 2: %v", err)
 		}
@@ -109,17 +122,17 @@ func main() {
 			fail("Failed to marshal json: %v", err)
 		}
 	} else {
-		// translate from 2 to 3
+		// translate from 2.x to 3.1
 		mapping := getMapping(fsMap)
 
 		// parse
-		cfg, rpt, err := v2_3.Parse(dataIn)
+		cfg, rpt, err := v2_4.Parse(dataIn)
 		fmt.Fprintf(os.Stderr, "%s", rpt.String())
 		if err != nil || rpt.IsFatal() {
 			fail("Error parsing spec v2 config: %v\n%v", err, rpt)
 		}
 
-		newCfg, err := ignconverter.Translate(cfg, mapping)
+		newCfg, err := v24tov31.Translate(cfg, mapping)
 		if err != nil {
 			fail("Failed to translate config from 2 to 3: %v", err)
 		}
