@@ -258,9 +258,21 @@ func translateGroups(groups []old.PasswdGroup) (ret []types.PasswdGroup) {
 
 func translateUnits(units []old.Unit) (ret []types.Unit) {
 	for _, u := range units {
+		var enabled *bool
+		// The Enabled field wins over Enable, since Enable is deprecated in spec v2 and removed in v3.
+		// It does so following the apparent intent of the upstream code [1]
+		// which actually does the opposite for Enable=true Enabled=false
+		// because the first matching line in a systemd preset wins.
+		// [1] https://github.com/coreos/ignition/blob/b4d18ad3fcb278a890327f858c1c10256ab6ee9d/internal/exec/stages/files/units.go#L32
+		if (u.Enabled != nil && *u.Enabled) || u.Enable {
+			enabled = util.BoolP(true)
+		}
+		if u.Enabled != nil && !*u.Enabled {
+			enabled = util.BoolPStrict(false)
+		}
 		ret = append(ret, types.Unit{
 			Name:     u.Name,
-			Enabled:  u.Enabled,
+			Enabled:  enabled,
 			Mask:     util.BoolP(u.Mask),
 			Contents: util.StrP(u.Contents),
 			Dropins:  translateDropins(u.Dropins),
