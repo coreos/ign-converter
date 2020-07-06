@@ -141,6 +141,7 @@ func main() {
 			fail("Failed to marshal json: %v", err)
 		}
 	}
+	dataOut = append(dataOut, '\n')
 
 	if output != "" {
 		var err error
