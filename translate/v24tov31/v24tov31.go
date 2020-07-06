@@ -106,6 +106,24 @@ func Check2_4(cfg old.Config, fsMap map[string]string) error {
 			}
 		}
 	}
+
+	// check that there are no duplicates with systemd units or dropins
+	unitMap := map[string]struct{}{}  // unit name -> struct{}
+	for _, unit := range cfg.Systemd.Units {
+		if _, isDup := unitMap[unit.Name]; isDup {
+			return util.DuplicateUnitError{unit.Name}
+		}
+		unitMap[unit.Name] = struct{}{}
+
+		dropinMap := map[string]struct{}{}  // dropin name -> struct{}
+		for _, dropin := range unit.Dropins {
+			if _, isDup := dropinMap[dropin.Name]; isDup {
+				return util.DuplicateDropinError{unit.Name, dropin.Name}
+			}
+			dropinMap[dropin.Name] = struct{}{}
+		}
+	}
+
 	return nil
 }
 
