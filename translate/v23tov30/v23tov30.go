@@ -17,7 +17,7 @@ package v23tov30
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
+	"path"
 	"reflect"
 
 	old "github.com/coreos/ignition/config/v2_3/types"
@@ -60,46 +60,46 @@ func Check2_3(cfg old.Config, fsMap map[string]string) error {
 	// build up a list of all the links we write. We're not allow to use links
 	// that we write
 	for _, link := range cfg.Storage.Links {
-		path := filepath.Join("/", fsMap[link.Filesystem], link.Path)
-		links = append(links, path)
+		pathString := path.Join("/", fsMap[link.Filesystem], link.Path)
+		links = append(links, pathString)
 	}
 
 	for _, file := range cfg.Storage.Files {
-		path := filepath.Join("/", fsMap[file.Filesystem], file.Path)
-		name := fmt.Sprintf("File: %s", path)
-		if duplicate, isDup := entryMap[path]; isDup {
+		pathString := path.Join("/", fsMap[file.Filesystem], file.Path)
+		name := fmt.Sprintf("File: %s", pathString)
+		if duplicate, isDup := entryMap[pathString]; isDup {
 			return util.DuplicateInodeError{duplicate, name}
 		}
-		if l := util.CheckPathUsesLink(links, path); l != "" {
+		if l := util.CheckPathUsesLink(links, pathString); l != "" {
 			return &util.UsesOwnLinkError{
 				LinkPath: l,
 				Name:     name,
 			}
 		}
-		entryMap[path] = name
+		entryMap[pathString] = name
 	}
 	for _, dir := range cfg.Storage.Directories {
-		path := filepath.Join("/", fsMap[dir.Filesystem], dir.Path)
-		name := fmt.Sprintf("Directory: %s", path)
-		if duplicate, isDup := entryMap[path]; isDup {
+		pathString := path.Join("/", fsMap[dir.Filesystem], dir.Path)
+		name := fmt.Sprintf("Directory: %s", pathString)
+		if duplicate, isDup := entryMap[pathString]; isDup {
 			return util.DuplicateInodeError{duplicate, name}
 		}
-		if l := util.CheckPathUsesLink(links, path); l != "" {
+		if l := util.CheckPathUsesLink(links, pathString); l != "" {
 			return &util.UsesOwnLinkError{
 				LinkPath: l,
 				Name:     name,
 			}
 		}
-		entryMap[path] = name
+		entryMap[pathString] = name
 	}
 	for _, link := range cfg.Storage.Links {
-		path := filepath.Join("/", fsMap[link.Filesystem], link.Path)
-		name := fmt.Sprintf("Link: %s", path)
-		if duplicate, isDup := entryMap[path]; isDup {
+		pathString := path.Join("/", fsMap[link.Filesystem], link.Path)
+		name := fmt.Sprintf("Link: %s", pathString)
+		if duplicate, isDup := entryMap[pathString]; isDup {
 			return &util.DuplicateInodeError{duplicate, name}
 		}
-		entryMap[path] = name
-		if l := util.CheckPathUsesLink(links, path); l != "" {
+		entryMap[pathString] = name
+		if l := util.CheckPathUsesLink(links, pathString); l != "" {
 			return &util.UsesOwnLinkError{
 				LinkPath: l,
 				Name:     name,
@@ -108,14 +108,14 @@ func Check2_3(cfg old.Config, fsMap map[string]string) error {
 	}
 
 	// check that there are no duplicates with systemd units or dropins
-	unitMap := map[string]struct{}{}  // unit name -> struct{}
+	unitMap := map[string]struct{}{} // unit name -> struct{}
 	for _, unit := range cfg.Systemd.Units {
 		if _, isDup := unitMap[unit.Name]; isDup {
 			return util.DuplicateUnitError{unit.Name}
 		}
 		unitMap[unit.Name] = struct{}{}
 
-		dropinMap := map[string]struct{}{}  // dropin name -> struct{}
+		dropinMap := map[string]struct{}{} // dropin name -> struct{}
 		for _, dropin := range unit.Dropins {
 			if _, isDup := dropinMap[dropin.Name]; isDup {
 				return util.DuplicateDropinError{unit.Name, dropin.Name}
@@ -375,7 +375,7 @@ func translateNode(n old.Node, m map[string]string) types.Node {
 		n.Group = &old.NodeGroup{}
 	}
 	return types.Node{
-		Path: filepath.Join(m[n.Filesystem], n.Path),
+		Path: path.Join(m[n.Filesystem], n.Path),
 		User: types.NodeUser{
 			ID:   n.User.ID,
 			Name: util.StrP(n.User.Name),
