@@ -1280,3 +1280,221 @@ func TestTranslate3_1to2_4(t *testing.T) {
 	}
 	assert.Equal(t, exhaustiveConfig2_4, res)
 }
+
+func TestRemoveDuplicateFilesAndUnits2_3(t *testing.T) {
+	mode := 420
+	testDataOld := "data:,old"
+	testDataNew := "data:,new"
+	testIgn2Config := types2_3.Config{}
+
+	// file test, add a duplicate file and see if the newest one is preserved
+	fileOld := types2_3.File{
+		Node: types2_3.Node{
+			Filesystem: "root", Path: "/etc/testfileconfig",
+		},
+		FileEmbedded1: types2_3.FileEmbedded1{
+			Contents: types2_3.FileContents{
+				Source: testDataOld,
+			},
+			Mode: &mode,
+		},
+	}
+	testIgn2Config.Storage.Files = append(testIgn2Config.Storage.Files, fileOld)
+
+	fileNew := types2_3.File{
+		Node: types2_3.Node{
+			Filesystem: "root", Path: "/etc/testfileconfig",
+		},
+		FileEmbedded1: types2_3.FileEmbedded1{
+			Contents: types2_3.FileContents{
+				Source: testDataNew,
+			},
+			Mode: &mode,
+		},
+	}
+	testIgn2Config.Storage.Files = append(testIgn2Config.Storage.Files, fileNew)
+
+	// unit test, add three units and three dropins with the same name as follows:
+	// unitOne:
+	//    contents: old
+	//    dropin:
+	//        name: one
+	//        contents: old
+	// unitTwo:
+	//    dropin:
+	//        name: one
+	//        contents: new
+	// unitThree:
+	//    contents: new
+	//    dropin:
+	//        name: two
+	//        contents: new
+	// Which should result in:
+	// unitFinal:
+	//    contents: new
+	//    dropin:
+	//      - name: one
+	//        contents: new
+	//      - name: two
+	//        contents: new
+	//
+	unitName := "testUnit"
+	dropinNameOne := "one"
+	dropinNameTwo := "two"
+	dropinOne := types2_3.SystemdDropin{
+		Contents: testDataOld,
+		Name:     dropinNameOne,
+	}
+	dropinTwo := types2_3.SystemdDropin{
+		Contents: testDataNew,
+		Name:     dropinNameOne,
+	}
+	dropinThree := types2_3.SystemdDropin{
+		Contents: testDataNew,
+		Name:     dropinNameTwo,
+	}
+
+	unitOne := types2_3.Unit{
+		Contents: testDataOld,
+		Name:     unitName,
+	}
+	unitOne.Dropins = append(unitOne.Dropins, dropinOne)
+	testIgn2Config.Systemd.Units = append(testIgn2Config.Systemd.Units, unitOne)
+
+	unitTwo := types2_3.Unit{
+		Name: unitName,
+	}
+	unitTwo.Dropins = append(unitTwo.Dropins, dropinTwo)
+	testIgn2Config.Systemd.Units = append(testIgn2Config.Systemd.Units, unitTwo)
+
+	unitThree := types2_3.Unit{
+		Contents: testDataNew,
+		Name:     unitName,
+	}
+	unitThree.Dropins = append(unitThree.Dropins, dropinThree)
+	testIgn2Config.Systemd.Units = append(testIgn2Config.Systemd.Units, unitThree)
+
+	convertedIgn2Config, err := v23tov30.RemoveDuplicateFilesAndUnits(testIgn2Config)
+	assert.NoError(t, err)
+
+	expectedIgn2Config := types2_3.Config{}
+	expectedIgn2Config.Storage.Files = append(expectedIgn2Config.Storage.Files, fileNew)
+	unitExpected := types2_3.Unit{
+		Contents: testDataNew,
+		Name:     unitName,
+	}
+	unitExpected.Dropins = append(unitExpected.Dropins, dropinThree)
+	unitExpected.Dropins = append(unitExpected.Dropins, dropinTwo)
+	expectedIgn2Config.Systemd.Units = append(expectedIgn2Config.Systemd.Units, unitExpected)
+
+	assert.Equal(t, expectedIgn2Config, convertedIgn2Config)
+}
+
+func TestRemoveDuplicateFilesAndUnits2_4(t *testing.T) {
+	mode := 420
+	testDataOld := "data:,old"
+	testDataNew := "data:,new"
+	testIgn2Config := types2_4.Config{}
+
+	// file test, add a duplicate file and see if the newest one is preserved
+	fileOld := types2_4.File{
+		Node: types2_4.Node{
+			Filesystem: "root", Path: "/etc/testfileconfig",
+		},
+		FileEmbedded1: types2_4.FileEmbedded1{
+			Contents: types2_4.FileContents{
+				Source: testDataOld,
+			},
+			Mode: &mode,
+		},
+	}
+	testIgn2Config.Storage.Files = append(testIgn2Config.Storage.Files, fileOld)
+
+	fileNew := types2_4.File{
+		Node: types2_4.Node{
+			Filesystem: "root", Path: "/etc/testfileconfig",
+		},
+		FileEmbedded1: types2_4.FileEmbedded1{
+			Contents: types2_4.FileContents{
+				Source: testDataNew,
+			},
+			Mode: &mode,
+		},
+	}
+	testIgn2Config.Storage.Files = append(testIgn2Config.Storage.Files, fileNew)
+
+	// unit test, add three units and three dropins with the same name as follows:
+	// unitOne:
+	//    contents: old
+	//    dropin:
+	//        name: one
+	//        contents: old
+	// unitTwo:
+	//    dropin:
+	//        name: one
+	//        contents: new
+	// unitThree:
+	//    contents: new
+	//    dropin:
+	//        name: two
+	//        contents: new
+	// Which should result in:
+	// unitFinal:
+	//    contents: new
+	//    dropin:
+	//      - name: one
+	//        contents: new
+	//      - name: two
+	//        contents: new
+	//
+	unitName := "testUnit"
+	dropinNameOne := "one"
+	dropinNameTwo := "two"
+	dropinOne := types2_4.SystemdDropin{
+		Contents: testDataOld,
+		Name:     dropinNameOne,
+	}
+	dropinTwo := types2_4.SystemdDropin{
+		Contents: testDataNew,
+		Name:     dropinNameOne,
+	}
+	dropinThree := types2_4.SystemdDropin{
+		Contents: testDataNew,
+		Name:     dropinNameTwo,
+	}
+
+	unitOne := types2_4.Unit{
+		Contents: testDataOld,
+		Name:     unitName,
+	}
+	unitOne.Dropins = append(unitOne.Dropins, dropinOne)
+	testIgn2Config.Systemd.Units = append(testIgn2Config.Systemd.Units, unitOne)
+
+	unitTwo := types2_4.Unit{
+		Name: unitName,
+	}
+	unitTwo.Dropins = append(unitTwo.Dropins, dropinTwo)
+	testIgn2Config.Systemd.Units = append(testIgn2Config.Systemd.Units, unitTwo)
+
+	unitThree := types2_4.Unit{
+		Contents: testDataNew,
+		Name:     unitName,
+	}
+	unitThree.Dropins = append(unitThree.Dropins, dropinThree)
+	testIgn2Config.Systemd.Units = append(testIgn2Config.Systemd.Units, unitThree)
+
+	convertedIgn2Config, err := v24tov31.RemoveDuplicateFilesAndUnits(testIgn2Config)
+	assert.NoError(t, err)
+
+	expectedIgn2Config := types2_4.Config{}
+	expectedIgn2Config.Storage.Files = append(expectedIgn2Config.Storage.Files, fileNew)
+	unitExpected := types2_4.Unit{
+		Contents: testDataNew,
+		Name:     unitName,
+	}
+	unitExpected.Dropins = append(unitExpected.Dropins, dropinThree)
+	unitExpected.Dropins = append(unitExpected.Dropins, dropinTwo)
+	expectedIgn2Config.Systemd.Units = append(expectedIgn2Config.Systemd.Units, unitExpected)
+
+	assert.Equal(t, expectedIgn2Config, convertedIgn2Config)
+}

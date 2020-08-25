@@ -447,3 +447,80 @@ func translateDirectories(dirs []old.Directory, m map[string]string) (ret []type
 	}
 	return
 }
+
+// RemoveDuplicateFilesAndUnits is a helper function that removes duplicated files/units from
+// spec v2 config, since neither spec v3 nor the translator function allow for duplicate file
+// entries in the config.
+// This functionality is not included in the Translate function and has some limitations, but
+// may be useful in cases where configuration has to be sanitized before translation.
+// For duplicates, it takes ordering into consideration by taking the file/unit contents from
+// the slice with the highest index value, which is assumed to be the latest revision.
+// Unit dropins are concat'ed, i.e. if no duplicate dropin of the same name exists it is added
+// to the list of dropins of the deduplicated unit definition.
+// The function will fail if a non-root filesystem is declared on any file.
+// It will also fail if file appendices are encountered.
+func RemoveDuplicateFilesAndUnits(cfg old.Config) (old.Config, error) {
+	files := cfg.Storage.Files
+	units := cfg.Systemd.Units
+
+	filePathMap := map[string]bool{}
+	var outFiles []old.File
+	// range from highest to lowest index
+	for i := len(files) - 1; i >= 0; i-- {
+		if files[i].Filesystem != "root" {
+			return old.Config{}, errors.New("cannot dedupe set of files on non-root filesystem")
+		}
+		if files[i].Append == true {
+			return old.Config{}, errors.New("cannot dedupe set of files that contains appendices")
+		}
+		path := files[i].Path
+		if _, isDup := filePathMap[path]; isDup {
+			// dupes are ignored
+			continue
+		}
+		// append unique file
+		outFiles = append(outFiles, files[i])
+		filePathMap[path] = true
+	}
+
+	unitNameMap := map[string]bool{}
+	var outUnits []old.Unit
+	// range from highest to lowest index
+	for i := len(units) - 1; i >= 0; i-- {
+		unitName := units[i].Name
+		if _, isDup := unitNameMap[unitName]; isDup {
+			// this is a duplicated unit by name
+			if len(units[i].Dropins) > 0 {
+				for j := range outUnits {
+					if outUnits[j].Name == unitName {
+						// outUnits[j] is the highest priority entry with this unit name
+						// now loop over the new unit's dropins and append it if the name
+						// isn't duplicated in the existing unit's dropins
+						for _, newDropin := range units[i].Dropins {
+							hasExistingDropin := false
+							for _, existingDropin := range outUnits[j].Dropins {
+								if existingDropin.Name == newDropin.Name {
+									hasExistingDropin = true
+									break
+								}
+							}
+							if !hasExistingDropin {
+								outUnits[j].Dropins = append(outUnits[j].Dropins, newDropin)
+							}
+						}
+					}
+				}
+			}
+		} else {
+			// append unique unit
+			outUnits = append(outUnits, units[i])
+			unitNameMap[unitName] = true
+		}
+	}
+
+	// outFiles and outUnits should now have all duplication removed
+	cfg.Storage.Files = outFiles
+	cfg.Systemd.Units = outUnits
+
+	return cfg, nil
+}
