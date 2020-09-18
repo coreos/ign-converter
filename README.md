@@ -4,7 +4,7 @@ Ignition Spec v1-v2.x.0 <-> v3.0.0 Config Converter
 ## What is this?
 
 This is a tool and library for converting old (spec v1-v2.x.0) Ignition configs
-to the new v3.0.0 format, and from v3.0.0 back to v2.2. See [Migrating Configs](https://github.com/coreos/ignition/blob/master/doc/migrating-configs.md)
+to the new v3.0.0 format, and from v3.0.0 back to v2.2. See [Migrating Configs](https://github.com/coreos/ignition/blob/master/docs/migrating-configs.md)
 for details on the changes.
 
 ## Extra information when translating from v2 -> v3
