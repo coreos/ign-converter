@@ -75,8 +75,8 @@ func Translate(cfg types.Config) (old.Config, error) {
 				HTTPTotal:           cfg.Ignition.Timeouts.HTTPTotal,
 			},
 			Proxy: old.Proxy{
-				HTTPProxy:  *cfg.Ignition.Proxy.HTTPProxy,
-				HTTPSProxy: *cfg.Ignition.Proxy.HTTPSProxy,
+				HTTPProxy:  util.StrV(cfg.Ignition.Proxy.HTTPProxy),
+				HTTPSProxy: util.StrV(cfg.Ignition.Proxy.HTTPSProxy),
 				NoProxy:    translateNoProxy(cfg.Ignition.Proxy.NoProxy),
 			},
 		},
