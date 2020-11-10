@@ -1259,14 +1259,36 @@ func TestTranslate2_4to3_1(t *testing.T) {
 }
 
 func TestTranslate3_0to2_2(t *testing.T) {
-	res, err := v30tov22.Translate(downtranslateConfig3_0)
+	emptyConfig := types3_0.Config{
+		Ignition: types3_0.Ignition{
+			Version: "3.0.0",
+		},
+	}
+
+	res, err := v30tov22.Translate(emptyConfig)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+
+	res, err = v30tov22.Translate(downtranslateConfig3_0)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
 	assert.Equal(t, exhaustiveConfig2_2, res)
 }
 func TestTranslate3_1to2_2(t *testing.T) {
-	res, err := v31tov22.Translate(downtranslateConfig3_1)
+	emptyConfig := types3_1.Config{
+		Ignition: types3_1.Ignition{
+			Version: "3.1.0",
+		},
+	}
+
+	res, err := v31tov22.Translate(emptyConfig)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+
+	res, err = v31tov22.Translate(downtranslateConfig3_1)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
@@ -1274,7 +1296,18 @@ func TestTranslate3_1to2_2(t *testing.T) {
 }
 
 func TestTranslate3_1to2_4(t *testing.T) {
-	res, err := v31tov24.Translate(nonexhaustiveConfig3_1)
+	emptyConfig := types3_1.Config{
+		Ignition: types3_1.Ignition{
+			Version: "3.1.0",
+		},
+	}
+
+	res, err := v31tov24.Translate(emptyConfig)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+
+	res, err = v31tov24.Translate(nonexhaustiveConfig3_1)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
