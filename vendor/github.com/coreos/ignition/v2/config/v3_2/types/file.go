@@ -1,4 +1,4 @@
-// Copyright 2016 CoreOS, Inc.
+// Copyright 2020 Red Hat, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,29 +39,4 @@ func (f FileEmbedded1) IgnoreDuplicates() map[string]struct{} {
 	return map[string]struct{}{
 		"Append": {},
 	}
-}
-
-func (fc FileContents) Validate(c path.ContextPath) (r report.Report) {
-	r.AddOnError(c.Append("compression"), fc.validateCompression())
-	r.AddOnError(c.Append("verification", "hash"), fc.validateVerification())
-	r.AddOnError(c.Append("source"), validateURLNilOK(fc.Source))
-	return
-}
-
-func (fc FileContents) validateCompression() error {
-	if fc.Compression != nil {
-		switch *fc.Compression {
-		case "", "gzip":
-		default:
-			return errors.ErrCompressionInvalid
-		}
-	}
-	return nil
-}
-
-func (fc FileContents) validateVerification() error {
-	if fc.Verification.Hash != nil && fc.Source == nil {
-		return errors.ErrVerificationAndNilSource
-	}
-	return nil
 }
