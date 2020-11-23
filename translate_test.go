@@ -22,6 +22,7 @@ import (
 	types2_4 "github.com/coreos/ignition/config/v2_4/types"
 	types3_0 "github.com/coreos/ignition/v2/config/v3_0/types"
 	types3_1 "github.com/coreos/ignition/v2/config/v3_1/types"
+	types3_2 "github.com/coreos/ignition/v2/config/v3_2/types"
 
 	"github.com/stretchr/testify/assert"
 
@@ -30,6 +31,9 @@ import (
 	"github.com/coreos/ign-converter/translate/v30tov22"
 	"github.com/coreos/ign-converter/translate/v31tov22"
 	"github.com/coreos/ign-converter/translate/v31tov24"
+	"github.com/coreos/ign-converter/translate/v32tov22"
+	"github.com/coreos/ign-converter/translate/v32tov24"
+	"github.com/coreos/ign-converter/translate/v32tov31"
 	"github.com/coreos/ign-converter/util"
 )
 
@@ -1176,6 +1180,338 @@ var (
 			},
 		},
 	}
+
+	nonexhaustiveConfig3_2 = types3_2.Config{
+		Ignition: types3_2.Ignition{
+			Version: "3.2.0",
+			Config: types3_2.IgnitionConfig{
+				Merge: []types3_2.Resource{
+					{
+						Source: util.StrP("https://example.com"),
+						Verification: types3_2.Verification{
+							Hash: &aSha512Hash,
+						},
+					},
+				},
+				Replace: types3_2.Resource{
+					Source: util.StrP("https://example.com"),
+					Verification: types3_2.Verification{
+						Hash: &aSha512Hash,
+					},
+				},
+			},
+			Timeouts: types3_2.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
+			},
+			Security: types3_2.Security{
+				TLS: types3_2.TLS{
+					CertificateAuthorities: []types3_2.Resource{
+						{
+							Source: util.StrP("https://example.com"),
+							Verification: types3_2.Verification{
+								Hash: &aSha512Hash,
+							},
+						},
+					},
+				},
+			},
+			Proxy: types3_2.Proxy{
+				HTTPProxy:  util.StrP("https://proxy.example.net/"),
+				HTTPSProxy: util.StrP("https://secure.proxy.example.net/"),
+				NoProxy: []types3_2.NoProxyItem{
+					"www.example.net",
+					"www.example2.net",
+				},
+			},
+		},
+		Storage: types3_2.Storage{
+			Disks: []types3_2.Disk{
+				{
+					Device:    "/dev/sda",
+					WipeTable: util.BoolP(true),
+					Partitions: []types3_2.Partition{
+						{
+							Label:              util.StrP("var"),
+							Number:             1,
+							SizeMiB:            util.IntP(5000),
+							StartMiB:           util.IntP(2048),
+							TypeGUID:           &aUUID,
+							GUID:               &aUUID,
+							WipePartitionEntry: util.BoolP(true),
+							ShouldExist:        util.BoolP(true),
+						},
+					},
+				},
+			},
+			Raid: []types3_2.Raid{
+				{
+					Name:    "array",
+					Level:   "raid10",
+					Devices: []types3_2.Device{"/dev/sdb", "/dev/sdc"},
+					Spares:  util.IntP(1),
+					Options: []types3_2.RaidOption{"foobar"},
+				},
+			},
+			Filesystems: []types3_2.Filesystem{
+				{
+					Path:           util.StrP("/var"),
+					Device:         "/dev/disk/by-partlabel/var",
+					Format:         util.StrP("xfs"),
+					WipeFilesystem: util.BoolP(true),
+					Label:          util.StrP("var"),
+					UUID:           &aUUID,
+					Options:        []types3_2.FilesystemOption{"rw"},
+				},
+			},
+			Files: []types3_2.File{
+				{
+					Node: types3_2.Node{
+						Path:      "/var/varfile",
+						Overwrite: util.BoolPStrict(false),
+						User: types3_2.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_2.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					FileEmbedded1: types3_2.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_2.Resource{
+							{
+								Compression: util.StrP("gzip"),
+								Source:      util.StrP("https://example.com"),
+								Verification: types3_2.Verification{
+									Hash: &aSha512Hash,
+								},
+								HTTPHeaders: types3_2.HTTPHeaders{
+									types3_2.HTTPHeader{
+										Name:  "Authorization",
+										Value: util.StrP("Basic YWxhZGRpbjpvcGVuc2VzYW1l"),
+									},
+									types3_2.HTTPHeader{
+										Name:  "User-Agent",
+										Value: util.StrP("Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)"),
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Node: types3_2.Node{
+						Path:      "/empty",
+						Overwrite: util.BoolPStrict(false),
+					},
+					FileEmbedded1: types3_2.FileEmbedded1{
+						Mode: util.IntP(420),
+						Contents: types3_2.Resource{
+							Source: util.StrPStrict(""),
+						},
+					},
+				},
+			},
+			Directories: []types3_2.Directory{
+				{
+					Node: types3_2.Node{
+						Path:      "/rootdir",
+						Overwrite: util.BoolP(true),
+						User: types3_2.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_2.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					DirectoryEmbedded1: types3_2.DirectoryEmbedded1{
+						Mode: util.IntP(420),
+					},
+				},
+			},
+			Links: []types3_2.Link{
+				{
+					Node: types3_2.Node{
+						Path:      "/rootlink",
+						Overwrite: util.BoolP(true),
+						User: types3_2.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_2.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					LinkEmbedded1: types3_2.LinkEmbedded1{
+						Hard:   util.BoolP(false),
+						Target: "/foobar",
+					},
+				},
+			},
+		},
+	}
+
+	downtranslateConfig3_2 = types3_2.Config{
+		Ignition: types3_2.Ignition{
+			Version: "3.2.0",
+			Config: types3_2.IgnitionConfig{
+				Merge: []types3_2.Resource{
+					{
+						Source: util.StrP("https://example.com"),
+						Verification: types3_2.Verification{
+							Hash: &aSha512Hash,
+						},
+					},
+				},
+				Replace: types3_2.Resource{
+					Source: util.StrP("https://example.com"),
+					Verification: types3_2.Verification{
+						Hash: &aSha512Hash,
+					},
+				},
+			},
+			Timeouts: types3_2.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
+			},
+			Security: types3_2.Security{
+				TLS: types3_2.TLS{
+					CertificateAuthorities: []types3_2.Resource{
+						{
+							Source: util.StrP("https://example.com"),
+							Verification: types3_2.Verification{
+								Hash: &aSha512Hash,
+							},
+						},
+					},
+				},
+			},
+			// Proxy is unsupported
+		},
+		Storage: types3_2.Storage{
+			Disks: []types3_2.Disk{
+				{
+					Device:    "/dev/sda",
+					WipeTable: util.BoolP(true),
+					Partitions: []types3_2.Partition{
+						{
+							Label:              util.StrP("var"),
+							Number:             1,
+							TypeGUID:           &aUUID,
+							GUID:               &aUUID,
+							WipePartitionEntry: util.BoolP(true),
+							ShouldExist:        util.BoolP(true),
+						},
+					},
+				},
+			},
+			Raid: []types3_2.Raid{
+				{
+					Name:    "array",
+					Level:   "raid10",
+					Devices: []types3_2.Device{"/dev/sdb", "/dev/sdc"},
+					Spares:  util.IntP(1),
+					Options: []types3_2.RaidOption{"foobar"},
+				},
+			},
+			Filesystems: []types3_2.Filesystem{
+				{
+					Path:           util.StrP("/var"),
+					Device:         "/dev/disk/by-partlabel/var",
+					Format:         util.StrP("xfs"),
+					WipeFilesystem: util.BoolP(true),
+					Label:          util.StrP("var"),
+					UUID:           &aUUID,
+					Options:        []types3_2.FilesystemOption{"rw"},
+				},
+			},
+			Files: []types3_2.File{
+				{
+					Node: types3_2.Node{
+						Path:      "/var/varfile",
+						Overwrite: util.BoolPStrict(false),
+						User: types3_2.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_2.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					FileEmbedded1: types3_2.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_2.Resource{
+							{
+								Compression: util.StrP("gzip"),
+								Source:      util.StrP("https://example.com"),
+								Verification: types3_2.Verification{
+									Hash: &aSha512Hash,
+								},
+							},
+						},
+					},
+				},
+				{
+					Node: types3_2.Node{
+						Path: "/etc/motd",
+						// Test default append with overwrite unset
+					},
+					FileEmbedded1: types3_2.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_2.Resource{
+							{
+								Source: util.StrP("data:text/plain;base64,Zm9vCg=="),
+							},
+						},
+					},
+				},
+				{
+					Node: types3_2.Node{
+						Path: "/empty",
+					},
+					FileEmbedded1: types3_2.FileEmbedded1{
+						Mode: util.IntP(420),
+						Contents: types3_2.Resource{
+							Source: util.StrPStrict(""),
+						},
+					},
+				},
+			},
+			Directories: []types3_2.Directory{
+				{
+					Node: types3_2.Node{
+						Path:      "/rootdir",
+						Overwrite: util.BoolP(true),
+						User: types3_2.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_2.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					DirectoryEmbedded1: types3_2.DirectoryEmbedded1{
+						Mode: util.IntP(420),
+					},
+				},
+			},
+			Links: []types3_2.Link{
+				{
+					Node: types3_2.Node{
+						Path:      "/rootlink",
+						Overwrite: util.BoolP(true),
+						User: types3_2.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_2.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					LinkEmbedded1: types3_2.LinkEmbedded1{
+						Hard:   util.BoolP(false),
+						Target: "/foobar",
+					},
+				},
+			},
+		},
+	}
 )
 
 type input2_3 struct {
@@ -1276,6 +1612,7 @@ func TestTranslate3_0to2_2(t *testing.T) {
 	}
 	assert.Equal(t, exhaustiveConfig2_2, res)
 }
+
 func TestTranslate3_1to2_2(t *testing.T) {
 	emptyConfig := types3_1.Config{
 		Ignition: types3_1.Ignition{
@@ -1312,6 +1649,63 @@ func TestTranslate3_1to2_4(t *testing.T) {
 		t.Fatalf("Failed translation: %v", err)
 	}
 	assert.Equal(t, exhaustiveConfig2_4, res)
+}
+
+func TestTranslate3_2to2_2(t *testing.T) {
+	emptyConfig := types3_2.Config{
+		Ignition: types3_2.Ignition{
+			Version: "3.2.0",
+		},
+	}
+
+	res, err := v32tov22.Translate(emptyConfig)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+
+	res, err = v32tov22.Translate(downtranslateConfig3_2)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+	assert.Equal(t, exhaustiveConfig2_2, res)
+}
+
+func TestTranslate3_2to2_4(t *testing.T) {
+	emptyConfig := types3_2.Config{
+		Ignition: types3_2.Ignition{
+			Version: "3.2.0",
+		},
+	}
+
+	res, err := v32tov24.Translate(emptyConfig)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+
+	res, err = v32tov24.Translate(nonexhaustiveConfig3_2)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+	assert.Equal(t, exhaustiveConfig2_4, res)
+}
+
+func TestTranslate3_2to3_1(t *testing.T) {
+	emptyConfig := types3_2.Config{
+		Ignition: types3_2.Ignition{
+			Version: "3.2.0",
+		},
+	}
+
+	res, err := v32tov31.Translate(emptyConfig)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+
+	res, err = v32tov31.Translate(nonexhaustiveConfig3_2)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+	assert.Equal(t, nonexhaustiveConfig3_1, res)
 }
 
 func TestRemoveDuplicateFilesAndUnits2_3(t *testing.T) {
