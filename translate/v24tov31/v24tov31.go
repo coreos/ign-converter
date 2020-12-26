@@ -474,9 +474,9 @@ func translateDirectories(dirs []old.Directory, m map[string]string) (ret []type
 	return
 }
 
-// RemoveDuplicateFilesAndUnits is a helper function that removes duplicated files/units from
-// spec v2 config, since neither spec v3 nor the translator function allow for duplicate file
-// entries in the config.
+// RemoveDuplicateFilesUnitsUsers is a helper function that removes duplicated files/units/users
+// from spec v2 config, since neither spec v3 nor the translator function allow for duplicate
+// file entries in the config.
 // This functionality is not included in the Translate function and has some limitations, but
 // may be useful in cases where configuration has to be sanitized before translation.
 // For duplicates, it takes ordering into consideration by taking the file/unit contents from
@@ -485,9 +485,10 @@ func translateDirectories(dirs []old.Directory, m map[string]string) (ret []type
 // to the list of dropins of the deduplicated unit definition.
 // The function will fail if a non-root filesystem is declared on any file.
 // It will also fail if file appendices are encountered.
-func RemoveDuplicateFilesAndUnits(cfg old.Config) (old.Config, error) {
+func RemoveDuplicateFilesUnitsUsers(cfg old.Config) (old.Config, error) {
 	files := cfg.Storage.Files
 	units := cfg.Systemd.Units
+	users := cfg.Passwd.Users
 
 	filePathMap := map[string]bool{}
 	var outFiles []old.File
@@ -544,9 +545,34 @@ func RemoveDuplicateFilesAndUnits(cfg old.Config) (old.Config, error) {
 		}
 	}
 
-	// outFiles and outUnits should now have all duplication removed
+	// Concat sshkey sections into the newest passwdUser in the list
+	// Only the SSHAuthorizedKeys of a duplicate user are considered,
+	// all other fields are ignored.
+	userNameMap := map[string]bool{}
+	var outUsers []old.PasswdUser
+	// range from highest to lowest index
+	for i := len(users) - 1; i >= 0; i-- {
+		userName := users[i].Name
+		if _, isDup := userNameMap[userName]; isDup {
+			// this is a duplicated user by name, append keys to existing user
+			for j := range outUsers {
+				if outUsers[j].Name == userName {
+					for _, newKey := range users[i].SSHAuthorizedKeys {
+						outUsers[j].SSHAuthorizedKeys = append(outUsers[j].SSHAuthorizedKeys, newKey)
+					}
+				}
+			}
+		} else {
+			// append unique users
+			outUsers = append(outUsers, users[i])
+			userNameMap[userName] = true
+		}
+	}
+
+	// outFiles, outUnits, and outUsers should now have all duplication removed
 	cfg.Storage.Files = outFiles
 	cfg.Systemd.Units = outUnits
+	cfg.Passwd.Users = outUsers
 
 	return cfg, nil
 }

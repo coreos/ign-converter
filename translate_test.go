@@ -1708,7 +1708,7 @@ func TestTranslate3_2to3_1(t *testing.T) {
 	assert.Equal(t, nonexhaustiveConfig3_1, res)
 }
 
-func TestRemoveDuplicateFilesAndUnits2_3(t *testing.T) {
+func TestRemoveDuplicateFilesUnitsUsers2_3(t *testing.T) {
 	mode := 420
 	testDataOld := "data:,old"
 	testDataNew := "data:,new"
@@ -1801,7 +1801,30 @@ func TestRemoveDuplicateFilesAndUnits2_3(t *testing.T) {
 	unitThree.Dropins = append(unitThree.Dropins, dropinThree)
 	testIgn2Config.Systemd.Units = append(testIgn2Config.Systemd.Units, unitThree)
 
-	convertedIgn2Config, err := v23tov30.RemoveDuplicateFilesAndUnits(testIgn2Config)
+	// user test, add a duplicate user and see if it is deduplicated but ssh keys from both are preserved
+	userName := "testUser"
+	userOne := types2_3.PasswdUser{
+		Name: userName,
+		SSHAuthorizedKeys: []types2_3.SSHAuthorizedKey{
+			"one",
+			"two",
+		},
+	}
+	userTwo := types2_3.PasswdUser{
+		Name: userName,
+		SSHAuthorizedKeys: []types2_3.SSHAuthorizedKey{
+			"three",
+		},
+	}
+	userThree := types2_3.PasswdUser{
+		Name: "userThree",
+		SSHAuthorizedKeys: []types2_3.SSHAuthorizedKey{
+			"four",
+		},
+	}
+	testIgn2Config.Passwd.Users = append(testIgn2Config.Passwd.Users, userOne, userTwo, userThree)
+
+	convertedIgn2Config, err := v23tov30.RemoveDuplicateFilesUnitsUsers(testIgn2Config)
 	assert.NoError(t, err)
 
 	expectedIgn2Config := types2_3.Config{}
@@ -1813,11 +1836,20 @@ func TestRemoveDuplicateFilesAndUnits2_3(t *testing.T) {
 	unitExpected.Dropins = append(unitExpected.Dropins, dropinThree)
 	unitExpected.Dropins = append(unitExpected.Dropins, dropinTwo)
 	expectedIgn2Config.Systemd.Units = append(expectedIgn2Config.Systemd.Units, unitExpected)
+	expectedMergedUser := types2_3.PasswdUser{
+		Name: userName,
+		SSHAuthorizedKeys: []types2_3.SSHAuthorizedKey{
+			"three",
+			"one",
+			"two",
+		},
+	}
+	expectedIgn2Config.Passwd.Users = append(expectedIgn2Config.Passwd.Users, userThree, expectedMergedUser)
 
 	assert.Equal(t, expectedIgn2Config, convertedIgn2Config)
 }
 
-func TestRemoveDuplicateFilesAndUnits2_4(t *testing.T) {
+func TestRemoveDuplicateFilesUnitsUsers2_4(t *testing.T) {
 	mode := 420
 	testDataOld := "data:,old"
 	testDataNew := "data:,new"
@@ -1910,7 +1942,30 @@ func TestRemoveDuplicateFilesAndUnits2_4(t *testing.T) {
 	unitThree.Dropins = append(unitThree.Dropins, dropinThree)
 	testIgn2Config.Systemd.Units = append(testIgn2Config.Systemd.Units, unitThree)
 
-	convertedIgn2Config, err := v24tov31.RemoveDuplicateFilesAndUnits(testIgn2Config)
+	// user test, add a duplicate user and see if it is deduplicated but ssh keys from both are preserved
+	userName := "testUser"
+	userOne := types2_4.PasswdUser{
+		Name: userName,
+		SSHAuthorizedKeys: []types2_4.SSHAuthorizedKey{
+			"one",
+			"two",
+		},
+	}
+	userTwo := types2_4.PasswdUser{
+		Name: userName,
+		SSHAuthorizedKeys: []types2_4.SSHAuthorizedKey{
+			"three",
+		},
+	}
+	userThree := types2_4.PasswdUser{
+		Name: "userThree",
+		SSHAuthorizedKeys: []types2_4.SSHAuthorizedKey{
+			"four",
+		},
+	}
+	testIgn2Config.Passwd.Users = append(testIgn2Config.Passwd.Users, userOne, userTwo, userThree)
+
+	convertedIgn2Config, err := v24tov31.RemoveDuplicateFilesUnitsUsers(testIgn2Config)
 	assert.NoError(t, err)
 
 	expectedIgn2Config := types2_4.Config{}
@@ -1922,6 +1977,14 @@ func TestRemoveDuplicateFilesAndUnits2_4(t *testing.T) {
 	unitExpected.Dropins = append(unitExpected.Dropins, dropinThree)
 	unitExpected.Dropins = append(unitExpected.Dropins, dropinTwo)
 	expectedIgn2Config.Systemd.Units = append(expectedIgn2Config.Systemd.Units, unitExpected)
-
+	expectedMergedUser := types2_4.PasswdUser{
+		Name: userName,
+		SSHAuthorizedKeys: []types2_4.SSHAuthorizedKey{
+			"three",
+			"one",
+			"two",
+		},
+	}
+	expectedIgn2Config.Passwd.Users = append(expectedIgn2Config.Passwd.Users, userThree, expectedMergedUser)
 	assert.Equal(t, expectedIgn2Config, convertedIgn2Config)
 }
