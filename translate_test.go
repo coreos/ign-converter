@@ -1601,12 +1601,12 @@ func TestTranslate3_0to2_2(t *testing.T) {
 		},
 	}
 
-	res, err := v30tov22.Translate(emptyConfig)
+	_, err := v30tov22.Translate(emptyConfig)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
 
-	res, err = v30tov22.Translate(downtranslateConfig3_0)
+	res, err := v30tov22.Translate(downtranslateConfig3_0)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
@@ -1620,12 +1620,12 @@ func TestTranslate3_1to2_2(t *testing.T) {
 		},
 	}
 
-	res, err := v31tov22.Translate(emptyConfig)
+	_, err := v31tov22.Translate(emptyConfig)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
 
-	res, err = v31tov22.Translate(downtranslateConfig3_1)
+	res, err := v31tov22.Translate(downtranslateConfig3_1)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
@@ -1639,12 +1639,12 @@ func TestTranslate3_1to2_4(t *testing.T) {
 		},
 	}
 
-	res, err := v31tov24.Translate(emptyConfig)
+	_, err := v31tov24.Translate(emptyConfig)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
 
-	res, err = v31tov24.Translate(nonexhaustiveConfig3_1)
+	res, err := v31tov24.Translate(nonexhaustiveConfig3_1)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
@@ -1658,12 +1658,12 @@ func TestTranslate3_2to2_2(t *testing.T) {
 		},
 	}
 
-	res, err := v32tov22.Translate(emptyConfig)
+	_, err := v32tov22.Translate(emptyConfig)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
 
-	res, err = v32tov22.Translate(downtranslateConfig3_2)
+	res, err := v32tov22.Translate(downtranslateConfig3_2)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
@@ -1677,12 +1677,12 @@ func TestTranslate3_2to2_4(t *testing.T) {
 		},
 	}
 
-	res, err := v32tov24.Translate(emptyConfig)
+	_, err := v32tov24.Translate(emptyConfig)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
 
-	res, err = v32tov24.Translate(nonexhaustiveConfig3_2)
+	res, err := v32tov24.Translate(nonexhaustiveConfig3_2)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
@@ -1696,12 +1696,12 @@ func TestTranslate3_2to3_1(t *testing.T) {
 		},
 	}
 
-	res, err := v32tov31.Translate(emptyConfig)
+	_, err := v32tov31.Translate(emptyConfig)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
 
-	res, err = v32tov31.Translate(nonexhaustiveConfig3_2)
+	res, err := v32tov31.Translate(nonexhaustiveConfig3_2)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}

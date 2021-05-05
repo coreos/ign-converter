@@ -68,7 +68,7 @@ func Check2_4(cfg old.Config, fsMap map[string]string) error {
 		pathString := path.Join("/", fsMap[file.Filesystem], file.Path)
 		name := fmt.Sprintf("File: %s", pathString)
 		if duplicate, isDup := entryMap[pathString]; isDup {
-			return util.DuplicateInodeError{duplicate, name}
+			return util.DuplicateInodeError{Old: duplicate, New: name}
 		}
 		if l := util.CheckPathUsesLink(links, pathString); l != "" {
 			return &util.UsesOwnLinkError{
@@ -82,7 +82,7 @@ func Check2_4(cfg old.Config, fsMap map[string]string) error {
 		pathString := path.Join("/", fsMap[dir.Filesystem], dir.Path)
 		name := fmt.Sprintf("Directory: %s", pathString)
 		if duplicate, isDup := entryMap[pathString]; isDup {
-			return util.DuplicateInodeError{duplicate, name}
+			return util.DuplicateInodeError{Old: duplicate, New: name}
 		}
 		if l := util.CheckPathUsesLink(links, pathString); l != "" {
 			return &util.UsesOwnLinkError{
@@ -96,7 +96,7 @@ func Check2_4(cfg old.Config, fsMap map[string]string) error {
 		pathString := path.Join("/", fsMap[link.Filesystem], link.Path)
 		name := fmt.Sprintf("Link: %s", pathString)
 		if duplicate, isDup := entryMap[pathString]; isDup {
-			return &util.DuplicateInodeError{duplicate, name}
+			return &util.DuplicateInodeError{Old: duplicate, New: name}
 		}
 		entryMap[pathString] = name
 		if l := util.CheckPathUsesLink(links, pathString); l != "" {
@@ -111,14 +111,14 @@ func Check2_4(cfg old.Config, fsMap map[string]string) error {
 	unitMap := map[string]struct{}{} // unit name -> struct{}
 	for _, unit := range cfg.Systemd.Units {
 		if _, isDup := unitMap[unit.Name]; isDup {
-			return util.DuplicateUnitError{unit.Name}
+			return util.DuplicateUnitError{Name: unit.Name}
 		}
 		unitMap[unit.Name] = struct{}{}
 
 		dropinMap := map[string]struct{}{} // dropin name -> struct{}
 		for _, dropin := range unit.Dropins {
 			if _, isDup := dropinMap[dropin.Name]; isDup {
-				return util.DuplicateDropinError{unit.Name, dropin.Name}
+				return util.DuplicateDropinError{Unit: unit.Name, Name: dropin.Name}
 			}
 			dropinMap[dropin.Name] = struct{}{}
 		}
@@ -422,7 +422,7 @@ func translateFiles(files []old.File, m map[string]string) (ret []types.File) {
 
 		// In spec 3, overwrite must be false if append is true
 		// i.e. spec 2 files with append true must be translated to spec 3 files with overwrite false
-		if f.FileEmbedded1.Append == true {
+		if f.FileEmbedded1.Append {
 			f.Node.Overwrite = util.BoolPStrict(false)
 		}
 
@@ -497,7 +497,7 @@ func RemoveDuplicateFilesUnitsUsers(cfg old.Config) (old.Config, error) {
 		if files[i].Filesystem != "root" {
 			return old.Config{}, errors.New("cannot dedupe set of files on non-root filesystem")
 		}
-		if files[i].Append == true {
+		if files[i].Append {
 			return old.Config{}, errors.New("cannot dedupe set of files that contains appendices")
 		}
 		path := files[i].Path
@@ -557,9 +557,7 @@ func RemoveDuplicateFilesUnitsUsers(cfg old.Config) (old.Config, error) {
 			// this is a duplicated user by name, append keys to existing user
 			for j := range outUsers {
 				if outUsers[j].Name == userName {
-					for _, newKey := range users[i].SSHAuthorizedKeys {
-						outUsers[j].SSHAuthorizedKeys = append(outUsers[j].SSHAuthorizedKeys, newKey)
-					}
+					outUsers[j].SSHAuthorizedKeys = append(outUsers[j].SSHAuthorizedKeys, users[i].SSHAuthorizedKeys...)
 				}
 			}
 		} else {
