@@ -51,7 +51,7 @@ func Translate(cfg types.Config) (old.Config, error) {
 			return old.Config{}, fmt.Errorf("Compression in Ignition.Security.TLS.CertificateAuthorities is not supported on 2.4")
 		}
 	}
-	
+
 	if len(cfg.Storage.Luks) > 0 {
 		return old.Config{}, fmt.Errorf("LUKS is not supported on 2.4")
 	}
