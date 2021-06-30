@@ -1706,6 +1706,68 @@ func TestTranslate3_2to3_1(t *testing.T) {
 		t.Fatalf("Failed translation: %v", err)
 	}
 	assert.Equal(t, nonexhaustiveConfig3_1, res)
+
+	_, err = v32tov31.Translate(types3_2.Config{
+		Ignition: types3_2.Ignition{
+			Version: "3.2.0",
+		},
+		Storage: types3_2.Storage{
+			Luks: []types3_2.Luks{
+				{
+					Name:   "z",
+					Device: util.StrP("/dev/z"),
+				},
+			},
+		},
+	})
+	assert.Error(t, err)
+	_, err = v32tov31.Translate(types3_2.Config{
+		Ignition: types3_2.Ignition{
+			Version: "3.2.0",
+		},
+		Storage: types3_2.Storage{
+			Disks: []types3_2.Disk{
+				{
+					Device: "/dev/a",
+					Partitions: []types3_2.Partition{
+						{
+							Label:  util.StrP("z"),
+							Resize: util.BoolP(true),
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Error(t, err)
+	_, err = v32tov31.Translate(types3_2.Config{
+		Ignition: types3_2.Ignition{
+			Version: "3.2.0",
+		},
+		Passwd: types3_2.Passwd{
+			Users: []types3_2.PasswdUser{
+				{
+					Name:        "z",
+					ShouldExist: util.BoolPStrict(false),
+				},
+			},
+		},
+	})
+	assert.Error(t, err)
+	_, err = v32tov31.Translate(types3_2.Config{
+		Ignition: types3_2.Ignition{
+			Version: "3.2.0",
+		},
+		Passwd: types3_2.Passwd{
+			Groups: []types3_2.PasswdGroup{
+				{
+					Name:        "z",
+					ShouldExist: util.BoolPStrict(false),
+				},
+			},
+		},
+	})
+	assert.Error(t, err)
 }
 
 func TestRemoveDuplicateFilesUnitsUsers2_3(t *testing.T) {
