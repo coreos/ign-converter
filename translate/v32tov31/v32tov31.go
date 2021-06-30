@@ -134,7 +134,7 @@ func Translate(cfg old_types.Config) (types.Config, error) {
 	res := translateConfig(cfg)
 
 	// Sanity check the returned config
-	oldrpt := validate.ValidateWithContext(cfg, nil)
+	oldrpt := validate.ValidateWithContext(res, nil)
 	if oldrpt.IsFatal() {
 		return types.Config{}, fmt.Errorf("Converted spec has unexpected fatal error:\n%s", oldrpt.String())
 	}
