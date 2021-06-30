@@ -23,6 +23,7 @@ import (
 	types3_0 "github.com/coreos/ignition/v2/config/v3_0/types"
 	types3_1 "github.com/coreos/ignition/v2/config/v3_1/types"
 	types3_2 "github.com/coreos/ignition/v2/config/v3_2/types"
+	types3_3 "github.com/coreos/ignition/v2/config/v3_3/types"
 
 	"github.com/stretchr/testify/assert"
 
@@ -34,6 +35,7 @@ import (
 	"github.com/coreos/ign-converter/translate/v32tov22"
 	"github.com/coreos/ign-converter/translate/v32tov24"
 	"github.com/coreos/ign-converter/translate/v32tov31"
+	"github.com/coreos/ign-converter/translate/v33tov32"
 	"github.com/coreos/ign-converter/util"
 )
 
@@ -1350,6 +1352,175 @@ var (
 		},
 	}
 
+	nonexhaustiveConfig3_3 = types3_3.Config{
+		Ignition: types3_3.Ignition{
+			Version: "3.3.0",
+			Config: types3_3.IgnitionConfig{
+				Merge: []types3_3.Resource{
+					{
+						Source: util.StrP("https://example.com"),
+						Verification: types3_3.Verification{
+							Hash: &aSha512Hash,
+						},
+					},
+				},
+				Replace: types3_3.Resource{
+					Source: util.StrP("https://example.com"),
+					Verification: types3_3.Verification{
+						Hash: &aSha512Hash,
+					},
+				},
+			},
+			Timeouts: types3_3.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
+			},
+			Security: types3_3.Security{
+				TLS: types3_3.TLS{
+					CertificateAuthorities: []types3_3.Resource{
+						{
+							Source: util.StrP("https://example.com"),
+							Verification: types3_3.Verification{
+								Hash: &aSha512Hash,
+							},
+						},
+					},
+				},
+			},
+			Proxy: types3_3.Proxy{
+				HTTPProxy:  util.StrP("https://proxy.example.net/"),
+				HTTPSProxy: util.StrP("https://secure.proxy.example.net/"),
+				NoProxy: []types3_3.NoProxyItem{
+					"www.example.net",
+					"www.example2.net",
+				},
+			},
+		},
+		Storage: types3_3.Storage{
+			Disks: []types3_3.Disk{
+				{
+					Device:    "/dev/sda",
+					WipeTable: util.BoolP(true),
+					Partitions: []types3_3.Partition{
+						{
+							Label:              util.StrP("var"),
+							Number:             1,
+							SizeMiB:            util.IntP(5000),
+							StartMiB:           util.IntP(2048),
+							TypeGUID:           &aUUID,
+							GUID:               &aUUID,
+							WipePartitionEntry: util.BoolP(true),
+							ShouldExist:        util.BoolP(true),
+						},
+					},
+				},
+			},
+			Raid: []types3_3.Raid{
+				{
+					Name:    "array",
+					Level:   util.StrP("raid10"),
+					Devices: []types3_3.Device{"/dev/sdb", "/dev/sdc"},
+					Spares:  util.IntP(1),
+					Options: []types3_3.RaidOption{"foobar"},
+				},
+			},
+			Filesystems: []types3_3.Filesystem{
+				{
+					Path:           util.StrP("/var"),
+					Device:         "/dev/disk/by-partlabel/var",
+					Format:         util.StrP("xfs"),
+					WipeFilesystem: util.BoolP(true),
+					Label:          util.StrP("var"),
+					UUID:           &aUUID,
+					Options:        []types3_3.FilesystemOption{"rw"},
+				},
+			},
+			Files: []types3_3.File{
+				{
+					Node: types3_3.Node{
+						Path:      "/var/varfile",
+						Overwrite: util.BoolPStrict(false),
+						User: types3_3.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_3.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					FileEmbedded1: types3_3.FileEmbedded1{
+						Mode: util.IntP(420),
+						Append: []types3_3.Resource{
+							{
+								Compression: util.StrP("gzip"),
+								Source:      util.StrP("https://example.com"),
+								Verification: types3_3.Verification{
+									Hash: &aSha512Hash,
+								},
+								HTTPHeaders: types3_3.HTTPHeaders{
+									types3_3.HTTPHeader{
+										Name:  "Authorization",
+										Value: util.StrP("Basic YWxhZGRpbjpvcGVuc2VzYW1l"),
+									},
+									types3_3.HTTPHeader{
+										Name:  "User-Agent",
+										Value: util.StrP("Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)"),
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Node: types3_3.Node{
+						Path:      "/empty",
+						Overwrite: util.BoolPStrict(false),
+					},
+					FileEmbedded1: types3_3.FileEmbedded1{
+						Mode: util.IntP(420),
+						Contents: types3_3.Resource{
+							Source: util.StrPStrict(""),
+						},
+					},
+				},
+			},
+			Directories: []types3_3.Directory{
+				{
+					Node: types3_3.Node{
+						Path:      "/rootdir",
+						Overwrite: util.BoolP(true),
+						User: types3_3.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_3.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					DirectoryEmbedded1: types3_3.DirectoryEmbedded1{
+						Mode: util.IntP(420),
+					},
+				},
+			},
+			Links: []types3_3.Link{
+				{
+					Node: types3_3.Node{
+						Path:      "/rootlink",
+						Overwrite: util.BoolP(true),
+						User: types3_3.NodeUser{
+							ID: util.IntP(1000),
+						},
+						Group: types3_3.NodeGroup{
+							Name: util.StrP("groupname"),
+						},
+					},
+					LinkEmbedded1: types3_3.LinkEmbedded1{
+						Hard:   util.BoolP(false),
+						Target: util.StrP("/foobar"),
+					},
+				},
+			},
+		},
+	}
+
 	downtranslateConfig3_2 = types3_2.Config{
 		Ignition: types3_2.Ignition{
 			Version: "3.2.0",
@@ -1763,6 +1934,58 @@ func TestTranslate3_2to3_1(t *testing.T) {
 				{
 					Name:        "z",
 					ShouldExist: util.BoolPStrict(false),
+				},
+			},
+		},
+	})
+	assert.Error(t, err)
+}
+
+func TestTranslate3_3to3_2(t *testing.T) {
+	emptyConfig := types3_3.Config{
+		Ignition: types3_3.Ignition{
+			Version: "3.3.0",
+		},
+	}
+
+	_, err := v33tov32.Translate(emptyConfig)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+
+	res, err := v33tov32.Translate(nonexhaustiveConfig3_3)
+	if err != nil {
+		t.Fatalf("Failed translation: %v", err)
+	}
+	assert.Equal(t, nonexhaustiveConfig3_2, res)
+
+	_, err = v33tov32.Translate(types3_3.Config{
+		Ignition: types3_3.Ignition{
+			Version: "3.3.0",
+		},
+		KernelArguments: types3_3.KernelArguments{
+			ShouldExist: []types3_3.KernelArgument{"foo"},
+		},
+	})
+	assert.Error(t, err)
+	_, err = v33tov32.Translate(types3_3.Config{
+		Ignition: types3_3.Ignition{
+			Version: "3.3.0",
+		},
+		KernelArguments: types3_3.KernelArguments{
+			ShouldNotExist: []types3_3.KernelArgument{"foo"},
+		},
+	})
+	assert.Error(t, err)
+	_, err = v33tov32.Translate(types3_3.Config{
+		Ignition: types3_3.Ignition{
+			Version: "3.3.0",
+		},
+		Storage: types3_3.Storage{
+			Filesystems: []types3_3.Filesystem{
+				{
+					Device: "/dev/foo",
+					Format: util.StrP("none"),
 				},
 			},
 		},
