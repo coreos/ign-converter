@@ -553,6 +553,72 @@ var (
 		},
 	}
 
+	badDeprecatedConfig2_4 = types2_4.Config{
+		Ignition: types2_4.Ignition{
+			Version: "2.4.0",
+			Config: types2_4.IgnitionConfig{
+				Append: []types2_4.ConfigReference{
+					{
+						Source: "https://example.com",
+						Verification: types2_4.Verification{
+							Hash: &aSha512Hash,
+						},
+					},
+				},
+				Replace: &types2_4.ConfigReference{
+					Source: "https://example.com",
+					Verification: types2_4.Verification{
+						Hash: &aSha512Hash,
+					},
+				},
+			},
+			Timeouts: types2_4.Timeouts{
+				HTTPResponseHeaders: util.IntP(5),
+				HTTPTotal:           util.IntP(10),
+			},
+			Security: types2_4.Security{
+				TLS: types2_4.TLS{
+					CertificateAuthorities: []types2_4.CaReference{
+						{
+							Source: "https://example.com",
+							Verification: types2_4.Verification{
+								Hash: &aSha512Hash,
+							},
+						},
+					},
+				},
+			},
+			Proxy: types2_4.Proxy{
+				HTTPProxy:  "https://proxy.example.net/",
+				HTTPSProxy: "https://secure.proxy.example.net/",
+				NoProxy: []types2_4.NoProxyItem{
+					"www.example.net",
+					"www.example2.net",
+				},
+			},
+		},
+		Storage: types2_4.Storage{
+			Filesystems: []types2_4.Filesystem{
+				{
+					Name: "/var",
+					Mount: &types2_4.Mount{
+						Device: "/dev/disk/by-partlabel/var",
+						Format: "xfs",
+						Label:  util.StrP("var"),
+						UUID:   &aUUID,
+						Create: &types2_4.Create{
+							Force: false,
+							Options: []types2_4.CreateOption{
+								"--label=var",
+								types2_4.CreateOption(fmt.Sprintf("--uuid=%s", aUUID)),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
 	exhaustiveConfig2_4 = types2_4.Config{
 		Ignition: types2_4.Ignition{
 			Version: "2.4.0",
@@ -2430,6 +2496,11 @@ func TestCheck2_4(t *testing.T) {
 			// need a map for filesystems
 			exhaustiveConfig2_4,
 			nil,
+		},
+		{
+			// use `mount.create` with `mount.create.force` set to false.
+			badDeprecatedConfig2_4,
+			exhaustiveMap,
 		},
 	}
 	for i, e := range goodConfigs {
