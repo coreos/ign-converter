@@ -51,6 +51,10 @@ func Check2_3(cfg old.Config, fsMap map[string]string) error {
 		if _, ok := fsMap[fs.Name]; !ok {
 			return util.NoFilesystemError(fs.Name)
 		}
+
+		if fs.Mount.Create != nil && !fs.Mount.Create.Force {
+			return fmt.Errorf("Config must force filesystem creation in case `mount.create` object is defined.")
+		}
 	}
 
 	// check that there are no duplicates with files, links, or directories
