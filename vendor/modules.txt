@@ -4,7 +4,7 @@ github.com/ajeddeloh/go-json
 # github.com/clarketm/json v1.14.1
 ## explicit
 github.com/clarketm/json
-# github.com/coreos/go-json v0.0.0-20170920214419-6a2fe990e083
+# github.com/coreos/go-json v0.0.0-20211020211907-c63f628265de
 github.com/coreos/go-json
 # github.com/coreos/go-semver v0.3.0
 github.com/coreos/go-semver/semver
@@ -35,7 +35,7 @@ github.com/coreos/ignition/config/validate
 github.com/coreos/ignition/config/validate/astjson
 github.com/coreos/ignition/config/validate/astnode
 github.com/coreos/ignition/config/validate/report
-# github.com/coreos/ignition/v2 v2.11.0
+# github.com/coreos/ignition/v2 v2.13.0
 ## explicit
 github.com/coreos/ignition/v2/config/merge
 github.com/coreos/ignition/v2/config/shared/errors
@@ -50,7 +50,7 @@ github.com/coreos/ignition/v2/config/v3_1/types
 github.com/coreos/ignition/v2/config/v3_2/types
 github.com/coreos/ignition/v2/config/v3_3/types
 github.com/coreos/ignition/v2/config/validate
-# github.com/coreos/vcontext v0.0.0-20210407161507-4ee6c745c8bd
+# github.com/coreos/vcontext v0.0.0-20211021162308-f1dbbca7bef4
 github.com/coreos/vcontext/json
 github.com/coreos/vcontext/path
 github.com/coreos/vcontext/report
@@ -63,7 +63,7 @@ github.com/pmezard/go-difflib/difflib
 # github.com/stretchr/testify v1.5.1
 ## explicit
 github.com/stretchr/testify/assert
-# github.com/vincent-petithory/dataurl v0.0.0-20160330182126-9a301d65acbb
+# github.com/vincent-petithory/dataurl v1.0.0
 github.com/vincent-petithory/dataurl
 # go4.org v0.0.0-20200104003542-c7e774b10ea0
 ## explicit
