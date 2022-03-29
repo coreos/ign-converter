@@ -8,6 +8,6 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20181031085051-9002847aa142 // indirect
 	github.com/coreos/ignition v0.35.0
 	github.com/coreos/ignition/v2 v2.13.0
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.7.1
 	go4.org v0.0.0-20200104003542-c7e774b10ea0 // indirect
 )
