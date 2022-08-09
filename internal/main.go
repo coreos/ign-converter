@@ -17,7 +17,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -42,7 +42,7 @@ func getMapping(fname string) map[string]string {
 	if fname == "" {
 		return m
 	}
-	data, err := ioutil.ReadFile(fname)
+	data, err := os.ReadFile(fname)
 	if err != nil {
 		fail("Error reading %s: %v", fname, err)
 	}
@@ -90,7 +90,7 @@ func main() {
 		defer infile.Close()
 	}
 
-	dataIn, err := ioutil.ReadAll(infile)
+	dataIn, err := io.ReadAll(infile)
 	if err != nil {
 		fail("failed to read %s: %v", infile.Name(), err)
 	}
