@@ -26,11 +26,10 @@ import (
 	"github.com/coreos/ignition/v2/config/validate"
 )
 
-// Copy of github.com/coreos/ignition/config/v3_4/translate/translate.go
+// Copy of github.com/coreos/ignition/v2/config/v3_4/translate/translate.go
 // with the types & old_types imports reversed (the referenced file translates
 // from 3.3 -> 3.4 but as a result only touches fields that are understood by
 // the 3.3 spec).
-
 func translateIgnition(old old_types.Ignition) (ret types.Ignition) {
 	// use a new translator so we don't recurse infinitely
 	translate.NewTranslator().Translate(&old, &ret)

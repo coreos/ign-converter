@@ -2411,7 +2411,6 @@ func TestTranslate3_4to3_3(t *testing.T) {
 					Node: types3_4.Node{
 						Path: "/root/file.txt",
 					},
-
 					FileEmbedded1: types3_4.FileEmbedded1{
 						Mode: util.IntP(01777),
 					},
@@ -2419,7 +2418,6 @@ func TestTranslate3_4to3_3(t *testing.T) {
 			},
 		},
 	})
-
 	assert.Error(t, err)
 
 	_, err = v34tov33.Translate(types3_4.Config{
@@ -2446,7 +2444,6 @@ func TestTranslate3_4to3_3(t *testing.T) {
 			},
 		},
 	})
-
 	assert.Error(t, err)
 
 	_, err = v34tov33.Translate(types3_4.Config{
