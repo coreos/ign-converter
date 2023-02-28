@@ -159,10 +159,8 @@ func checkValue(v reflect.Value) error {
 				return fmt.Errorf("Invalid input config: arn: scheme for s3 is not supported in spec v3.3")
 			}
 		}
-	default:
-		return descend(v)
 	}
-	return nil
+	return descend(v)
 }
 
 func descend(v reflect.Value) error {
