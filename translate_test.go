@@ -2358,6 +2358,7 @@ func TestTranslate3_4to3_3(t *testing.T) {
 		Storage: types3_4.Storage{
 			Luks: []types3_4.Luks{
 				{
+					Device: util.StrP("/dev/sda"),
 					Clevis: types3_4.Clevis{
 						Tang: []types3_4.Tang{
 							{
@@ -2380,6 +2381,7 @@ func TestTranslate3_4to3_3(t *testing.T) {
 		Storage: types3_4.Storage{
 			Luks: []types3_4.Luks{
 				{
+					Device:  util.StrP("/dev/sda"),
 					Discard: util.BoolP(true),
 				},
 			},
@@ -2394,6 +2396,7 @@ func TestTranslate3_4to3_3(t *testing.T) {
 		Storage: types3_4.Storage{
 			Luks: []types3_4.Luks{
 				{
+					Device:      util.StrP("/dev/sda"),
 					OpenOptions: []types3_4.OpenOption{"foo"},
 				},
 			},
@@ -2411,7 +2414,6 @@ func TestTranslate3_4to3_3(t *testing.T) {
 					Node: types3_4.Node{
 						Path: "/root/file.txt",
 					},
-
 					FileEmbedded1: types3_4.FileEmbedded1{
 						Mode: util.IntP(01777),
 					},
@@ -2419,7 +2421,6 @@ func TestTranslate3_4to3_3(t *testing.T) {
 			},
 		},
 	})
-
 	assert.Error(t, err)
 
 	_, err = v34tov33.Translate(types3_4.Config{
@@ -2446,7 +2447,6 @@ func TestTranslate3_4to3_3(t *testing.T) {
 			},
 		},
 	})
-
 	assert.Error(t, err)
 
 	_, err = v34tov33.Translate(types3_4.Config{
@@ -2456,6 +2456,9 @@ func TestTranslate3_4to3_3(t *testing.T) {
 		Storage: types3_4.Storage{
 			Files: []types3_4.File{
 				{
+					Node: types3_4.Node{
+						Path: "/path",
+					},
 					FileEmbedded1: types3_4.FileEmbedded1{
 						Contents: types3_4.Resource{
 							Source: util.StrP("arn:aws:s3:us-west-1:123456789012:accesspoint/test/object/some/path"),

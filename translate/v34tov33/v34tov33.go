@@ -26,11 +26,10 @@ import (
 	"github.com/coreos/ignition/v2/config/validate"
 )
 
-// Copy of github.com/coreos/ignition/config/v3_4/translate/translate.go
+// Copy of github.com/coreos/ignition/v2/config/v3_4/translate/translate.go
 // with the types & old_types imports reversed (the referenced file translates
 // from 3.3 -> 3.4 but as a result only touches fields that are understood by
 // the 3.3 spec).
-
 func translateIgnition(old old_types.Ignition) (ret types.Ignition) {
 	// use a new translator so we don't recurse infinitely
 	translate.NewTranslator().Translate(&old, &ret)
@@ -103,7 +102,7 @@ func Translate(cfg old_types.Config) (types.Config, error) {
 		return types.Config{}, fmt.Errorf("Invalid input config:\n%s", rpt.String())
 	}
 
-	err := recursiveIsOk(reflect.ValueOf(cfg))
+	err := checkValue(reflect.ValueOf(cfg))
 	if err != nil {
 		return types.Config{}, err
 	}
@@ -118,17 +117,15 @@ func Translate(cfg old_types.Config) (types.Config, error) {
 	return res, nil
 }
 
-func recursiveIsOk(v reflect.Value) error {
-	t := v.Type()
-	k := t.Kind()
-	switch {
-	case t == reflect.TypeOf(old_types.Tang{}):
+func checkValue(v reflect.Value) error {
+	switch v.Type() {
+	case reflect.TypeOf(old_types.Tang{}):
 		tang := v.Interface().(old_types.Tang)
 		// 3.3 does not support tang offline provisioning
 		if util.NotEmpty(tang.Advertisement) {
 			return fmt.Errorf("Invalid input config: tang offline provisioning is not supported in spec v3.3")
 		}
-	case t == reflect.TypeOf(old_types.Luks{}):
+	case reflect.TypeOf(old_types.Luks{}):
 		luks := v.Interface().(old_types.Luks)
 		// 3.3 does not support luks discard
 		if util.IsTrue(luks.Discard) {
@@ -138,19 +135,19 @@ func recursiveIsOk(v reflect.Value) error {
 		if len(luks.OpenOptions) > 0 {
 			return fmt.Errorf("Invalid input config: luks openOptions is not supported in spec v3.3")
 		}
-	case t == reflect.TypeOf(old_types.FileEmbedded1{}):
+	case reflect.TypeOf(old_types.FileEmbedded1{}):
 		f := v.Interface().(old_types.FileEmbedded1)
 		// 3.3 does not support special mode bits in files
 		if f.Mode != nil && (*f.Mode&07000) != 0 {
 			return fmt.Errorf("Invalid input config: special mode bits are not supported in spec v3.3")
 		}
-	case t == reflect.TypeOf(old_types.DirectoryEmbedded1{}):
+	case reflect.TypeOf(old_types.DirectoryEmbedded1{}):
 		d := v.Interface().(old_types.DirectoryEmbedded1)
 		// 3.3 does not support special mode bits in directories
 		if d.Mode != nil && (*d.Mode&07000) != 0 {
 			return fmt.Errorf("Invalid input config: special mode bits are not supported in spec v3.3")
 		}
-	case t == reflect.TypeOf(old_types.Resource{}):
+	case reflect.TypeOf(old_types.Resource{}):
 		resource := v.Interface().(old_types.Resource)
 		// 3.3 does not support arn: scheme for s3
 		if util.NotEmpty(resource.Source) {
@@ -162,18 +159,25 @@ func recursiveIsOk(v reflect.Value) error {
 				return fmt.Errorf("Invalid input config: arn: scheme for s3 is not supported in spec v3.3")
 			}
 		}
+	}
+	return descend(v)
+}
+
+func descend(v reflect.Value) error {
+	k := v.Type().Kind()
+	switch {
 	case util.IsPrimitive(k):
 		return nil
 	case k == reflect.Struct:
 		for i := 0; i < v.NumField(); i += 1 {
-			err := recursiveIsOk(v.Field(i))
+			err := checkValue(v.Field(i))
 			if err != nil {
 				return err
 			}
 		}
 	case k == reflect.Slice:
 		for i := 0; i < v.Len(); i += 1 {
-			err := recursiveIsOk(v.Index(i))
+			err := checkValue(v.Index(i))
 			if err != nil {
 				return err
 			}
@@ -181,7 +185,7 @@ func recursiveIsOk(v reflect.Value) error {
 	case k == reflect.Ptr:
 		v = v.Elem()
 		if v.IsValid() {
-			return recursiveIsOk(v)
+			return checkValue(v)
 		}
 	}
 	return nil
