@@ -15,63 +15,93 @@
 package v33tov32
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/coreos/ign-converter/util"
-
+	types3_2 "github.com/coreos/ignition/v2/config/v3_2/types"
 	types3_3 "github.com/coreos/ignition/v2/config/v3_3/types"
-
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTranslate3_3to3_2(t *testing.T) {
-	emptyConfig := types3_3.Config{
-		Ignition: types3_3.Ignition{
-			Version: "3.3.0",
-		},
+func TestTranslate3_3to3_23(t *testing.T) {
+	type in struct {
+		data types3_3.Config
 	}
 
-	_, err := Translate(emptyConfig)
-	if err != nil {
-		t.Fatalf("Failed translation: %v", err)
+	type out struct {
+		data types3_2.Config
 	}
 
-	res, err := Translate(util.NonexhaustiveConfig3_3)
-	if err != nil {
-		t.Fatalf("Failed translation: %v", err)
-	}
-	assert.Equal(t, util.NonexhaustiveConfig3_2, res)
-
-	_, err = Translate(types3_3.Config{
-		Ignition: types3_3.Ignition{
-			Version: "3.3.0",
-		},
-		KernelArguments: types3_3.KernelArguments{
-			ShouldExist: []types3_3.KernelArgument{"foo"},
-		},
-	})
-	assert.Error(t, err)
-	_, err = Translate(types3_3.Config{
-		Ignition: types3_3.Ignition{
-			Version: "3.3.0",
-		},
-		KernelArguments: types3_3.KernelArguments{
-			ShouldNotExist: []types3_3.KernelArgument{"foo"},
-		},
-	})
-	assert.Error(t, err)
-	_, err = Translate(types3_3.Config{
-		Ignition: types3_3.Ignition{
-			Version: "3.3.0",
-		},
-		Storage: types3_3.Storage{
-			Filesystems: []types3_3.Filesystem{
-				{
-					Device: "/dev/foo",
-					Format: util.StrP("util.None"),
+	tests := []struct {
+		in  in
+		out out
+		err error
+	}{
+		{
+			in: in{data: types3_3.Config{
+				Ignition: types3_3.Ignition{
+					Version: "3.3.0",
 				},
-			},
+			}},
+			out: out{data: types3_2.Config{
+				Ignition: types3_2.Ignition{
+					Version: "3.2.0",
+				},
+			}},
 		},
-	})
-	assert.Error(t, err)
+		{
+			in:  in{data: util.NonexhaustiveConfig3_3},
+			out: out{data: util.NonexhaustiveConfig3_2},
+		},
+		{
+			in: in{data: types3_3.Config{
+				Ignition: types3_3.Ignition{
+					Version: "3.3.0",
+				},
+				KernelArguments: types3_3.KernelArguments{
+					ShouldExist: []types3_3.KernelArgument{"foo"},
+				},
+			}},
+			out: out{data: types3_2.Config{}},
+			err: fmt.Errorf("KernelArguments is not supported on 3.2"),
+		},
+		{
+
+			in: in{data: types3_3.Config{
+				Ignition: types3_3.Ignition{
+					Version: "3.3.0",
+				},
+				KernelArguments: types3_3.KernelArguments{
+					ShouldNotExist: []types3_3.KernelArgument{"foo"},
+				},
+			}},
+			out: out{data: types3_2.Config{}},
+			err: fmt.Errorf("KernelArguments is not supported on 3.2"),
+		},
+		{
+
+			in: in{data: types3_3.Config{
+				Ignition: types3_3.Ignition{
+					Version: "3.3.0",
+				},
+				Storage: types3_3.Storage{
+					Filesystems: []types3_3.Filesystem{
+						{
+							Device: "/dev/foo",
+							Format: util.StrP("util.None"),
+						},
+					},
+				},
+			}},
+			out: out{data: types3_2.Config{}},
+			err: fmt.Errorf("Invalid input config:\nerror at $.storage.filesystems.0.format: invalid filesystem format\n"),
+		},
+	}
+	for i, test := range tests {
+		result, err := Translate(test.in.data)
+		assert.Equal(t, test.err, err, "#%d: bad error: want %v, got %v", i, test.err, err)
+		assert.Equal(t, test.out.data, result, "#%d: bad result, want %v, got %v", i, test.out.data, result)
+	}
+
 }
