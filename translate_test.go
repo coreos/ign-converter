@@ -2308,6 +2308,7 @@ func TestTranslate3_3to3_2(t *testing.T) {
 		},
 	})
 	assert.Error(t, err)
+
 	_, err = v33tov32.Translate(types3_3.Config{
 		Ignition: types3_3.Ignition{
 			Version: "3.3.0",
@@ -2317,6 +2318,7 @@ func TestTranslate3_3to3_2(t *testing.T) {
 		},
 	})
 	assert.Error(t, err)
+
 	_, err = v33tov32.Translate(types3_3.Config{
 		Ignition: types3_3.Ignition{
 			Version: "3.3.0",
@@ -2331,6 +2333,88 @@ func TestTranslate3_3to3_2(t *testing.T) {
 		},
 	})
 	assert.Error(t, err)
+
+	var exp = types3_2.Config{
+		Ignition: types3_2.Ignition{
+			Version: "3.2.0",
+		},
+		Storage: types3_2.Storage{
+			Luks: []types3_2.Luks{
+				{
+					Device: util.StrP("/dev/sda"),
+					Clevis: &types3_2.Clevis{
+						Tang: []types3_2.Tang{
+							{
+								URL:        "http://example.com",
+								Thumbprint: util.StrP("z"),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	res, _ = v33tov32.Translate(types3_3.Config{
+		Ignition: types3_3.Ignition{
+			Version: "3.3.0",
+		},
+		Storage: types3_3.Storage{
+			Luks: []types3_3.Luks{
+				{
+					Device: util.StrP("/dev/sda"),
+					Clevis: types3_3.Clevis{
+						Tang: []types3_3.Tang{
+							{
+								URL:        "http://example.com",
+								Thumbprint: util.StrP("z"),
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Equal(t, exp, res)
+
+	exp = types3_2.Config{
+		Ignition: types3_2.Ignition{
+			Version: "3.2.0",
+		},
+		Storage: types3_2.Storage{
+			Luks: []types3_2.Luks{
+				{
+					Device: util.StrP("/dev/sda"),
+					Clevis: &types3_2.Clevis{
+						Custom: &types3_2.Custom{
+							Config:       "z",
+							NeedsNetwork: util.BoolP(true),
+							Pin:          "tang",
+						},
+					},
+				},
+			},
+		},
+	}
+	res, _ = v33tov32.Translate(types3_3.Config{
+		Ignition: types3_3.Ignition{
+			Version: "3.3.0",
+		},
+		Storage: types3_3.Storage{
+			Luks: []types3_3.Luks{
+				{
+					Device: util.StrP("/dev/sda"),
+					Clevis: types3_3.Clevis{
+						Custom: types3_3.ClevisCustom{
+							Config:       util.StrP("z"),
+							NeedsNetwork: util.BoolP(true),
+							Pin:          util.StrP("tang"),
+						},
+					},
+				},
+			},
+		},
+	})
+	assert.Equal(t, exp, res)
 }
 
 func TestTranslate3_4to3_3(t *testing.T) {

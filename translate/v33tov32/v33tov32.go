@@ -16,6 +16,7 @@ package v33tov32
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/coreos/ignition/v2/config/translate"
 	"github.com/coreos/ignition/v2/config/v3_2/types"
@@ -23,10 +24,12 @@ import (
 	"github.com/coreos/ignition/v2/config/validate"
 )
 
-// Copy of github.com/coreos/ignition/v2/config/v3_3/translate/translate.go
+// Mostly a copy of github.com/coreos/ignition/v2/config/v3_3/translate/translate.go
 // with the types & old_types imports reversed (the referenced file translates
 // from 3.2 -> 3.3 but as a result only touches fields that are understood by
-// the 3.2 spec).
+// the 3.2 spec). With additional logic to account for translation from a non-pointer
+// field to a pointer field (e.g. ClevisCustom and Clevis), and the translation
+// from a pointer to a non-pointer field (e.g. Link.Target, Raid.Level).
 func translateIgnition(old old_types.Ignition) (ret types.Ignition) {
 	// use a new translator so we don't recurse infinitely
 	translate.NewTranslator().Translate(&old, &ret)
@@ -47,7 +50,12 @@ func translateRaid(old old_types.Raid) (ret types.Raid) {
 func translateLuks(old old_types.Luks) (ret types.Luks) {
 	tr := translate.NewTranslator()
 	tr.AddCustomTranslator(translateClevis)
-	tr.Translate(old.Clevis, &ret.Clevis)
+	// this goes from "not pointer" in 3.3 to "pointer" in 3.2 so we need to
+	// populate it if old.Clevis isn't empty
+	if !reflect.DeepEqual(old.Clevis, old_types.Clevis{}) {
+		ret.Clevis = &types.Clevis{}
+		tr.Translate(&old.Clevis, ret.Clevis)
+	}
 	tr.Translate(&old.Device, &ret.Device)
 	tr.Translate(&old.KeyFile, &ret.KeyFile)
 	tr.Translate(&old.Label, &ret.Label)
@@ -61,7 +69,12 @@ func translateLuks(old old_types.Luks) (ret types.Luks) {
 func translateClevis(old old_types.Clevis) (ret types.Clevis) {
 	tr := translate.NewTranslator()
 	tr.AddCustomTranslator(translateClevisCustom)
-	tr.Translate(old.Custom, &ret.Custom)
+	// this goes from "not pointer" in 3.3 to "pointer" in 3.2 so we need to
+	// populate it if old.Custom isn't empty
+	if !reflect.DeepEqual(old.Custom, old_types.ClevisCustom{}) {
+		ret.Custom = &types.Custom{}
+		tr.Translate(&old.Custom, ret.Custom)
+	}
 	tr.Translate(&old.Tang, &ret.Tang)
 	tr.Translate(&old.Threshold, &ret.Threshold)
 	tr.Translate(&old.Tpm2, &ret.Tpm2)
