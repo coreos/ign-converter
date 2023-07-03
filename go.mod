@@ -5,13 +5,13 @@ go 1.18
 require (
 	github.com/clarketm/json v1.17.1
 	github.com/coreos/ignition v0.35.0
-	github.com/coreos/ignition/v2 v2.15.0
+	github.com/coreos/ignition/v2 v2.16.0
 	github.com/stretchr/testify v1.8.4
 )
 
 require (
 	github.com/ajeddeloh/go-json v0.0.0-20200220154158-5ae607161559 // indirect
-	github.com/aws/aws-sdk-go v1.44.204 // indirect
+	github.com/aws/aws-sdk-go v1.44.289 // indirect
 	github.com/coreos/go-json v0.0.0-20230131223807-18775e0fb4fb // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd v0.0.0-20181031085051-9002847aa142 // indirect
