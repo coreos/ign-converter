@@ -1,8 +1,8 @@
 # github.com/ajeddeloh/go-json v0.0.0-20200220154158-5ae607161559
 ## explicit
 github.com/ajeddeloh/go-json
-# github.com/aws/aws-sdk-go v1.44.298
-## explicit; go 1.11
+# github.com/aws/aws-sdk-go v1.47.9
+## explicit; go 1.19
 github.com/aws/aws-sdk-go/aws/arn
 # github.com/clarketm/json v1.17.1
 ## explicit
@@ -41,8 +41,8 @@ github.com/coreos/ignition/config/validate
 github.com/coreos/ignition/config/validate/astjson
 github.com/coreos/ignition/config/validate/astnode
 github.com/coreos/ignition/config/validate/report
-# github.com/coreos/ignition/v2 v2.16.2
-## explicit; go 1.18
+# github.com/coreos/ignition/v2 v2.17.0
+## explicit; go 1.19
 github.com/coreos/ignition/v2/config/merge
 github.com/coreos/ignition/v2/config/shared/errors
 github.com/coreos/ignition/v2/config/shared/parse
