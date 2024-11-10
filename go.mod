@@ -2,6 +2,8 @@ module github.com/coreos/ign-converter
 
 go 1.18
 
+replace github.com/coreos/ign-converter/translate/v34tov35 => ./translate/v35tov34
+
 require (
 	github.com/clarketm/json v1.17.1
 	github.com/coreos/ignition v0.35.0
