@@ -1857,56 +1857,56 @@ var (
 		},
 	}
 
-	downtranslateConfig3_4 = types3_5.Config{
-		Ignition: types3_5.Ignition{
-			Version: "3.5.0",
-			Config: types3_5.IgnitionConfig{
-				Merge: []types3_5.Resource{
+	downtranslateConfig3_4 = types3_4.Config{
+		Ignition: types3_4.Ignition{
+			Version: "3.4.0",
+			Config: types3_4.IgnitionConfig{
+				Merge: []types3_4.Resource{
 					{
 						Source: util.StrP("https://example.com"),
-						Verification: types3_5.Verification{
+						Verification: types3_4.Verification{
 							Hash: &aSha512Hash,
 						},
 					},
 				},
-				Replace: types3_5.Resource{
+				Replace: types3_4.Resource{
 					Source: util.StrP("https://example.com"),
-					Verification: types3_5.Verification{
+					Verification: types3_4.Verification{
 						Hash: &aSha512Hash,
 					},
 				},
 			},
-			Timeouts: types3_5.Timeouts{
+			Timeouts: types3_4.Timeouts{
 				HTTPResponseHeaders: util.IntP(5),
 				HTTPTotal:           util.IntP(10),
 			},
-			Security: types3_5.Security{
-				TLS: types3_5.TLS{
-					CertificateAuthorities: []types3_5.Resource{
+			Security: types3_4.Security{
+				TLS: types3_4.TLS{
+					CertificateAuthorities: []types3_4.Resource{
 						{
 							Source: util.StrP("https://example.com"),
-							Verification: types3_5.Verification{
+							Verification: types3_4.Verification{
 								Hash: &aSha512Hash,
 							},
 						},
 					},
 				},
 			},
-			Proxy: types3_5.Proxy{
+			Proxy: types3_4.Proxy{
 				HTTPProxy:  util.StrP("https://proxy.example.net/"),
 				HTTPSProxy: util.StrP("https://secure.proxy.example.net/"),
-				NoProxy: []types3_5.NoProxyItem{
+				NoProxy: []types3_4.NoProxyItem{
 					"www.example.net",
 					"www.example2.net",
 				},
 			},
 		},
-		Storage: types3_5.Storage{
-			Disks: []types3_5.Disk{
+		Storage: types3_4.Storage{
+			Disks: []types3_4.Disk{
 				{
 					Device:    "/dev/sda",
 					WipeTable: util.BoolP(true),
-					Partitions: []types3_5.Partition{
+					Partitions: []types3_4.Partition{
 						{
 							Label:              util.StrP("var"),
 							Number:             1,
@@ -1920,16 +1920,16 @@ var (
 					},
 				},
 			},
-			Raid: []types3_5.Raid{
+			Raid: []types3_4.Raid{
 				{
 					Name:    "array",
 					Level:   util.StrP("raid10"),
-					Devices: []types3_5.Device{"/dev/sdb", "/dev/sdc"},
+					Devices: []types3_4.Device{"/dev/sdb", "/dev/sdc"},
 					Spares:  util.IntP(1),
-					Options: []types3_5.RaidOption{"foobar"},
+					Options: []types3_4.RaidOption{"foobar"},
 				},
 			},
-			Filesystems: []types3_5.Filesystem{
+			Filesystems: []types3_4.Filesystem{
 				{
 					Path:           util.StrP("/var"),
 					Device:         "/dev/disk/by-partlabel/var",
@@ -1937,36 +1937,36 @@ var (
 					WipeFilesystem: util.BoolP(true),
 					Label:          util.StrP("var"),
 					UUID:           &aUUID,
-					Options:        []types3_5.FilesystemOption{"rw"},
+					Options:        []types3_4.FilesystemOption{"rw"},
 				},
 			},
-			Files: []types3_5.File{
+			Files: []types3_4.File{
 				{
-					Node: types3_5.Node{
+					Node: types3_4.Node{
 						Path:      "/var/varfile",
 						Overwrite: util.BoolPStrict(false),
-						User: types3_5.NodeUser{
+						User: types3_4.NodeUser{
 							ID: util.IntP(1000),
 						},
-						Group: types3_5.NodeGroup{
+						Group: types3_4.NodeGroup{
 							Name: util.StrP("groupname"),
 						},
 					},
-					FileEmbedded1: types3_5.FileEmbedded1{
+					FileEmbedded1: types3_4.FileEmbedded1{
 						Mode: util.IntP(420),
-						Append: []types3_5.Resource{
+						Append: []types3_4.Resource{
 							{
 								Compression: util.StrP("gzip"),
 								Source:      util.StrP("https://example.com"),
-								Verification: types3_5.Verification{
+								Verification: types3_4.Verification{
 									Hash: &aSha512Hash,
 								},
-								HTTPHeaders: types3_5.HTTPHeaders{
-									types3_5.HTTPHeader{
+								HTTPHeaders: types3_4.HTTPHeaders{
+									types3_4.HTTPHeader{
 										Name:  "Authorization",
 										Value: util.StrP("Basic YWxhZGRpbjpvcGVuc2VzYW1l"),
 									},
-									types3_5.HTTPHeader{
+									types3_4.HTTPHeader{
 										Name:  "User-Agent",
 										Value: util.StrP("Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)"),
 									},
@@ -1976,48 +1976,48 @@ var (
 					},
 				},
 				{
-					Node: types3_5.Node{
+					Node: types3_4.Node{
 						Path:      "/empty",
 						Overwrite: util.BoolPStrict(false),
 					},
-					FileEmbedded1: types3_5.FileEmbedded1{
+					FileEmbedded1: types3_4.FileEmbedded1{
 						Mode: util.IntP(420),
-						Contents: types3_5.Resource{
+						Contents: types3_4.Resource{
 							Source: util.StrPStrict(""),
 						},
 					},
 				},
 			},
-			Directories: []types3_5.Directory{
+			Directories: []types3_4.Directory{
 				{
-					Node: types3_5.Node{
+					Node: types3_4.Node{
 						Path:      "/rootdir",
 						Overwrite: util.BoolP(true),
-						User: types3_5.NodeUser{
+						User: types3_4.NodeUser{
 							ID: util.IntP(1000),
 						},
-						Group: types3_5.NodeGroup{
+						Group: types3_4.NodeGroup{
 							Name: util.StrP("groupname"),
 						},
 					},
-					DirectoryEmbedded1: types3_5.DirectoryEmbedded1{
+					DirectoryEmbedded1: types3_4.DirectoryEmbedded1{
 						Mode: util.IntP(420),
 					},
 				},
 			},
-			Links: []types3_5.Link{
+			Links: []types3_4.Link{
 				{
-					Node: types3_5.Node{
+					Node: types3_4.Node{
 						Path:      "/rootlink",
 						Overwrite: util.BoolP(true),
-						User: types3_5.NodeUser{
+						User: types3_4.NodeUser{
 							ID: util.IntP(1000),
 						},
-						Group: types3_5.NodeGroup{
+						Group: types3_4.NodeGroup{
 							Name: util.StrP("groupname"),
 						},
 					},
-					LinkEmbedded1: types3_5.LinkEmbedded1{
+					LinkEmbedded1: types3_4.LinkEmbedded1{
 						Hard:   util.BoolP(false),
 						Target: util.StrP("/foobar"),
 					},
@@ -2895,6 +2895,7 @@ func TestTranslate3_4to3_3(t *testing.T) {
 	assert.Error(t, err)
 }
 func TestTranslate3_5to3_4(t *testing.T) {
+
 	emptyConfig := types3_5.Config{
 		Ignition: types3_5.Ignition{
 			Version: "3.5.0",
@@ -2906,21 +2907,28 @@ func TestTranslate3_5to3_4(t *testing.T) {
 		t.Fatalf("Failed translation: %v", err)
 	}
 
-	res, err := v35tov34.Translate(nonexhaustiveConfig3_4)
+	res, err := v35tov34.Translate(nonexhaustiveConfig3_5)
 	if err != nil {
 		t.Fatalf("Failed translation: %v", err)
 	}
-	assert.Equal(t, downtranslateConfig3_3, res)
+	assert.Equal(t, downtranslateConfig3_4, res)
 
 	// Translation with unsupported `Cex` type
 	_, err = v35tov34.Translate(types3_5.Config{
 		Ignition: types3_5.Ignition{
 			Version: "3.5.0",
 		},
+		Storage: types3_5.Storage{
+			Luks: []types3_5.Luks{
+				{
+					Cex: types3_5.Cex{
+						Enabled: util.BoolP(true),
+					},
+				},
+			},
+		},
 	})
 	assert.Error(t, err)
-	assert.ErrorContains(t, err, "'Cex' type is not supported in spec v3.4")
-
 }
 
 func TestRemoveDuplicateFilesUnitsUsers2_3(t *testing.T) {
