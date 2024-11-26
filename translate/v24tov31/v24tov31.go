@@ -51,6 +51,10 @@ func Check2_4(cfg old.Config, fsMap map[string]string) error {
 		if _, ok := fsMap[fs.Name]; !ok {
 			return util.NoFilesystemError(fs.Name)
 		}
+
+		if fs.Mount.Create != nil && !fs.Mount.Create.Force {
+			return fmt.Errorf("Config must force filesystem creation in case `mount.create` object is defined.")
+		}
 	}
 
 	// check that there are no duplicates with files, links, or directories
@@ -372,13 +376,31 @@ func translateFilesystems(fss []old.Filesystem, m map[string]string) (ret []type
 		if f.Mount == nil {
 			f.Mount = &old.Mount{}
 		}
+
+		wipe := util.BoolP(f.Mount.WipeFilesystem)
+		options := translateFilesystemOptions(f.Mount.Options)
+
+		// If we have a `"create": {...}` section, we try
+		// to convert it.
+		if f.Mount.Create != nil {
+			// `wipe` should always be set to `true` - there is a config check
+			// in the beginning of the translation to ensure that we don't try to
+			// use this `create` section without forcing the exising filesystem to be
+			// wiped.
+			wipe = util.BoolP(f.Mount.Create.Force)
+
+			for _, opt := range f.Mount.Create.Options {
+				options = append(options, types.FilesystemOption(opt))
+			}
+		}
+
 		ret = append(ret, types.Filesystem{
 			Device:         f.Mount.Device,
 			Format:         util.StrP(f.Mount.Format),
-			WipeFilesystem: util.BoolP(f.Mount.WipeFilesystem),
+			WipeFilesystem: wipe,
 			Label:          f.Mount.Label,
 			UUID:           f.Mount.UUID,
-			Options:        translateFilesystemOptions(f.Mount.Options),
+			Options:        options,
 			Path:           util.StrP(m[f.Name]),
 		})
 	}
